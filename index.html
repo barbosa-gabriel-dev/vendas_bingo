@@ -346,6 +346,57 @@
     .hidden {
       display: none !important;
     }
+
+    .bottom-nav {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .conferencia-box {
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .conferencia-ok {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .conferencia-err {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .mini-bingo {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fff;
+      table-layout: fixed;
+    }
+
+    .mini-bingo th {
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      padding: 5px 0;
+      border: 1px solid #cbd5e1;
+    }
+
+    .mini-bingo td {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 0;
+      border: 1px solid #cbd5e1;
+    }
+
+    .mini-bingo td.free {
+      background: #fef08a;
+      font-size: 10px;
+    }
   </style>
 </head>
 <body>
@@ -410,7 +461,7 @@
         </button>
       </section>
 
-      <!-- ABA 2: LISTA DE VENDIDOS -->
+<!-- ABA 2: LISTA DE VENDIDOS -->
       <section id="abaLista" class="hidden">
         <div class="card" style="padding: 12px;">
           <div class="filtros-row">
@@ -442,11 +493,40 @@
 
         <div id="listaVendasContainer"></div>
       </section>
+
+      <!-- ABA 3: CONFERÊNCIA RÁPIDA DO CÓDIGO ÚNICO -->
+      <section id="abaConferir" class="card hidden">
+        <h2 style="margin: 0 0 12px 0; font-size: 17px;">Conferir Cartela / Código Único</h2>
+
+        <label for="codigoConferencia">Código Único de Marcação</label>
+        <input
+          type="text"
+          id="codigoConferencia"
+          placeholder="Ex: GBN-0001-756D51"
+          style="text-transform: uppercase;"
+        />
+
+        <label for="numeroConferencia">Ou Número da Cartela (opcional)</label>
+        <input
+          type="number"
+          id="numeroConferencia"
+          placeholder="Ex: 1"
+          min="1"
+          inputmode="numeric"
+        />
+
+        <button id="btnConsultarCodigo" class="btn-primary" onclick="consultarCodigoCartela()">
+          Consultar Cartela
+        </button>
+
+        <div id="resultadoConferencia"></div>
+      </section>
     </div>
 
     <nav class="bottom-nav">
       <button id="navVenda" class="nav-btn ativo" onclick="trocarAba('venda')">➕ Vender</button>
       <button id="navLista" class="nav-btn" onclick="trocarAba('lista')">📋 Vendidos</button>
+      <button id="navConferir" class="nav-btn" onclick="trocarAba('conferir')">🔎 Conferir</button>
     </nav>
   </div>
 
@@ -630,19 +710,111 @@
       }
     }
 
-    function trocarAba(aba) {
+function trocarAba(aba) {
       limparMsg("msgApp");
       const isVenda = aba === "venda";
-      document.getElementById("abaVenda").classList.toggle("hidden", !isVenda);
-      document.getElementById("abaLista").classList.toggle("hidden", isVenda);
-      document.getElementById("navVenda").classList.toggle("ativo", isVenda);
-      document.getElementById("navLista").classList.toggle("ativo", !isVenda);
+      const isLista = aba === "lista";
+      const isConferir = aba === "conferir";
 
-      if (!isVenda) {
+      document.getElementById("abaVenda").classList.toggle("hidden", !isVenda);
+      document.getElementById("abaLista").classList.toggle("hidden", !isLista);
+      document.getElementById("abaConferir").classList.toggle("hidden", !isConferir);
+
+      document.getElementById("navVenda").classList.toggle("ativo", isVenda);
+      document.getElementById("navLista").classList.toggle("ativo", isLista);
+      document.getElementById("navConferir").classList.toggle("ativo", isConferir);
+
+      if (isLista) {
         carregarVendas();
       }
     }
 
+    async function consultarCodigoCartela() {
+      limparMsg("msgApp");
+      const codigo = document.getElementById("codigoConferencia").value.trim().toUpperCase();
+      const numero = document.getElementById("numeroConferencia").value.trim();
+      const box = document.getElementById("resultadoConferencia");
+
+      if (!codigo && !numero) {
+        box.innerHTML = `<div class="conferencia-box conferencia-err">Digite o código único ou o número da cartela.</div>`;
+        return;
+      }
+
+      const btn = document.getElementById("btnConsultarCodigo");
+      btn.disabled = true;
+      btn.textContent = "Consultando...";
+
+      try {
+        const res = await chamarApi(usuarioLogado.apiUrl, {
+          acao: "consultarCartela",
+          codigo_unico: codigo,
+          numero_cartela: numero
+        });
+
+        if (!res.sucesso || !res.valido) {
+          box.innerHTML = `<div class="conferencia-box conferencia-err"><strong>${escaparHtml(res.mensagem || "Cartela inválida.")}</strong></div>`;
+          return;
+        }
+
+        renderizarResultadoConferencia(res.cartela, res.venda);
+      } catch (err) {
+        box.innerHTML = `<div class="conferencia-box conferencia-err">Erro de conexão ao consultar a cartela.</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Consultar Cartela";
+      }
+    }
+
+    function renderizarResultadoConferencia(cartela, venda) {
+      const box = document.getElementById("resultadoConferencia");
+      const cols = [
+        cartela.col_B.split(","),
+        cartela.col_I.split(","),
+        cartela.col_N.split(","),
+        cartela.col_G.split(","),
+        cartela.col_O.split(",")
+      ];
+
+      let linhasTabela = "";
+      for (let r = 0; r < 5; r++) {
+        let tds = "";
+        for (let c = 0; c < 5; c++) {
+          const isCentro = (r === 2 && c === 2);
+          const val = (cols[c] && cols[c][r] !== undefined) ? cols[c][r] : "";
+          tds += `<td class="${isCentro ? "free" : ""}">${escaparHtml(val)}</td>`;
+        }
+        linhasTabela += `<tr>${tds}</tr>`;
+      }
+
+      const vendaHtml = venda
+        ? `
+          <div style="margin-top:8px; font-size:13px;">
+            <strong>Comprador:</strong> ${escaparHtml(venda.comprador)}<br/>
+            <strong>Pagamento:</strong> ${escaparHtml(venda.status_pagamento)}<br/>
+            <strong>Vendedor:</strong> ${escaparHtml(venda.vendedor_nome)} (@${escaparHtml(venda.vendedor_login)})
+          </div>
+        `
+        : `<div style="margin-top:8px; font-size:13px; color:#334155;"><strong>Situação:</strong> Ainda não registrada como vendida.</div>`;
+
+      box.innerHTML = `
+        <div class="conferencia-box conferencia-ok">
+          <div style="font-size:14px; font-weight:800; color:#166534;">
+            ✅ CARTELA AUTÊNTICA — Nº ${escaparHtml(cartela.numero_cartela)}
+          </div>
+          <div style="font-size:12px; font-weight:700; margin-top:4px;">
+            Código Único: ${escaparHtml(cartela.codigo_unico)} • Base: ${escaparHtml(cartela.status_base)}
+          </div>
+          ${vendaHtml}
+          <table class="mini-bingo">
+            <thead>
+              <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+            </thead>
+            <tbody>${linhasTabela}</tbody>
+          </table>
+        </div>
+      `;
+    }
+    
     function mudarEscopoVendedor(escopo) {
       escopoVendedor = escopo;
       document.getElementById("filtroVendedor").classList.toggle("ativo", escopo === "meu");
