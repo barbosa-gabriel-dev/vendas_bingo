@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Bingo Vendas PWA</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --primary: #0f172a;
+      --accent: #16a34a;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 84px;
+    }
+
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    header .sub {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.14);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    input:focus {
+      outline: 2px solid var(--primary);
+      border-color: var(--primary);
+    }
+
+    .status-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .toggle-btn {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1.5px solid #cbd5e1;
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      color: #334155;
+    }
+
+    .toggle-btn.active-pago {
+      background: #dcfce7;
+      border-color: var(--accent);
+      color: #166534;
+    }
+
+    .toggle-btn.active-pendente {
+      background: #fef3c7;
+      border-color: var(--warn);
+      color: #92400e;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .filtros-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 7px 12px;
+      border-radius: 20px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #334155;
+    }
+
+    .chip.ativo {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .venda-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .venda-num {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .venda-comp {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 2px 0;
+    }
+
+    .venda-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    .badge-pago {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-pendente {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .btn-baixa {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      z-index: 20;
+    }
+
+    .nav-btn {
+      padding: 12px;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .nav-btn.ativo {
+      color: var(--primary);
+      border-top: 3px solid var(--primary);
+    }
+
+    .msg {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .msg.ok {
+      display: block;
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .msg.err {
+      display: block;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* Modal de Confirmação */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.aberto {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-pergunta {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 18px 0;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .modal-acoes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-cancelar {
+      padding: 11px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      font-weight: 700;
+      cursor: pointer;
+      color: #334155;
+    }
+
+    .btn-confirmar {
+      padding: 11px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TELA DE LOGIN (APENAS NO PRIMEIRO ACESSO) -->
+  <div id="telaLogin" class="container">
+    <div class="card" style="margin-top: 24px;">
+      <h2 style="margin: 0 0 6px 0; font-size: 19px;">🎱 Bingo Vendas</h2>
+      <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--muted);">
+        Faça login apenas uma vez neste aparelho.
+      </p>
+      <div id="msgLogin" class="msg"></div>
+
+      <label for="apiUrl">URL do Web App (Apps Script)</label>
+      <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" />
+
+      <label for="loginInput">Usuário / Login</label>
+      <input type="text" id="loginInput" placeholder="Ex: vendedor1" autocomplete="username" />
+
+      <label for="pinInput">PIN / Senha</label>
+      <input type="password" id="pinInput" placeholder="Ex: 1111" inputmode="numeric" autocomplete="current-password" />
+
+      <button id="btnEntrar" class="btn-primary" onclick="fazerLogin()">Entrar</button>
+    </div>
+  </div>
+
+  <!-- APLICAÇÃO PRINCIPAL -->
+  <div id="telaApp" class="hidden">
+    <header>
+      <div>
+        <h1>🎱 Bingo Vendas</h1>
+        <div class="sub" id="infoVendedor">Vendedor</div>
+      </div>
+      <button class="btn-logout" onclick="sairConta()">Trocar</button>
+    </header>
+
+    <div class="container">
+      <div id="msgApp" class="msg"></div>
+
+      <!-- ABA 1: REGISTRAR VENDA -->
+      <section id="abaVenda" class="card">
+        <h2 style="margin: 0 0 14px 0; font-size: 17px;">Registrar Nova Venda</h2>
+
+        <label for="numCartela">Número da Cartela</label>
+        <input type="number" id="numCartela" placeholder="Ex: 1" min="1" inputmode="numeric" />
+
+        <label for="nomeComprador">Nome do Comprador</label>
+        <input type="text" id="nomeComprador" placeholder="Ex: Maria da Silva" />
+
+        <label>Status do Pagamento</label>
+        <div class="status-toggle">
+          <button type="button" id="btnPago" class="toggle-btn active-pago" onclick="selecionarStatus('Pago')">
+            ✅ Pago
+          </button>
+          <button type="button" id="btnPendente" class="toggle-btn" onclick="selecionarStatus('Pendente')">
+            ⏳ Pendente
+          </button>
+        </div>
+
+        <button id="btnSalvarVenda" class="btn-primary" onclick="registrarVenda()">
+          Salvar Venda
+        </button>
+      </section>
+
+      <!-- ABA 2: LISTA DE VENDIDOS -->
+      <section id="abaLista" class="hidden">
+        <div class="card" style="padding: 12px;">
+          <div class="filtros-row">
+            <button id="filtroVendedor" class="chip ativo" onclick="mudarEscopoVendedor('meu')">
+              Minhas Vendas
+            </button>
+            <button id="filtroTodos" class="chip" onclick="mudarEscopoVendedor('todos')">
+              Todos os Vendedores
+            </button>
+            <button class="chip" style="margin-left: auto;" onclick="carregarVendas()">
+              🔄 Atualizar
+            </button>
+          </div>
+
+          <div class="filtros-row">
+            <button id="stTodos" class="chip ativo" onclick="mudarFiltroStatus('Todos')">Todos</button>
+            <button id="stPendente" class="chip" onclick="mudarFiltroStatus('Pendente')">Pendentes</button>
+            <button id="stPago" class="chip" onclick="mudarFiltroStatus('Pago')">Pagos</button>
+          </div>
+
+          <input
+            type="text"
+            id="buscaVenda"
+            placeholder="Buscar por número da cartela ou comprador..."
+            style="margin-bottom: 0;"
+            oninput="renderizarVendas()"
+          />
+        </div>
+
+        <div id="listaVendasContainer"></div>
+      </section>
+    </div>
+
+    <nav class="bottom-nav">
+      <button id="navVenda" class="nav-btn ativo" onclick="trocarAba('venda')">➕ Vender</button>
+      <button id="navLista" class="nav-btn" onclick="trocarAba('lista')">📋 Vendidos</button>
+    </nav>
+  </div>
+
+  <!-- MODAL DE CONFIRMAÇÃO DE PAGAMENTO -->
+  <div id="modalBaixa" class="modal-backdrop">
+    <div class="modal-box">
+      <p id="textoModalConfirmacao" class="modal-pergunta"></p>
+      <div class="modal-acoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalBaixa()">Cancelar</button>
+        <button type="button" id="btnConfirmarBaixa" class="btn-confirmar" onclick="confirmarBaixaPagamento()">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Se quiser deixar a URL fixa para os vendedores nem precisarem colar no primeiro login,
+    // coloque a URL do seu Web App do Apps Script entre as aspas abaixo:
+    const URL_PADRAO_API = "";
+
+    const STORAGE_USER_KEY = "bingo_pwa_usuario_v1";
+    const STORAGE_API_KEY = "bingo_pwa_api_url_v1";
+
+    let usuarioLogado = null;
+    let statusSelecionado = "Pago";
+    let escopoVendedor = "meu"; // "meu" | "todos"
+    let filtroStatus = "Todos"; // "Todos" | "Pendente" | "Pago"
+    let todasAsVendas = [];
+    let vendaParaBaixa = null;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+      }
+
+      const apiSalva = localStorage.getItem(STORAGE_API_KEY) || URL_PADRAO_API;
+      if (apiSalva) {
+        document.getElementById("apiUrl").value = apiSalva;
+      }
+
+      const userSalvo = localStorage.getItem(STORAGE_USER_KEY);
+      if (userSalvo) {
+        try {
+          usuarioLogado = JSON.parse(userSalvo);
+          if (usuarioLogado && usuarioLogado.login && usuarioLogado.apiUrl) {
+            abrirApp();
+            return;
+          }
+        } catch (e) {}
+      }
+
+      mostrarTelaLogin();
+    });
+
+    function mostrarTelaLogin() {
+      document.getElementById("telaLogin").classList.remove("hidden");
+      document.getElementById("telaApp").classList.add("hidden");
+    }
+
+    function abrirApp() {
+      document.getElementById("telaLogin").classList.add("hidden");
+      document.getElementById("telaApp").classList.remove("hidden");
+      document.getElementById("infoVendedor").textContent =
+        `${usuarioLogado.nome} (@${usuarioLogado.login})`;
+      carregarVendas();
+    }
+
+    function sairConta() {
+      localStorage.removeItem(STORAGE_USER_KEY);
+      usuarioLogado = null;
+      mostrarTelaLogin();
+    }
+
+    function setMsg(idElemento, texto, tipo) {
+      const el = document.getElementById(idElemento);
+      el.textContent = texto;
+      el.className = `msg ${tipo}`;
+    }
+
+    function limparMsg(idElemento) {
+      const el = document.getElementById(idElemento);
+      el.textContent = "";
+      el.className = "msg";
+    }
+
+    async function chamarApi(apiUrl, payload) {
+      const resp = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      return await resp.json();
+    }
+
+    async function fazerLogin() {
+      limparMsg("msgLogin");
+      const apiUrl = document.getElementById("apiUrl").value.trim();
+      const login = document.getElementById("loginInput").value.trim();
+      const pin = document.getElementById("pinInput").value.trim();
+
+      if (!apiUrl || !login || !pin) {
+        setMsg("msgLogin", "Preencha a URL do Web App, o login e o PIN.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnEntrar");
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+
+      try {
+        const res = await chamarApi(apiUrl, { acao: "login", login, pin });
+        if (!res.sucesso) {
+          setMsg("msgLogin", res.mensagem || "Falha no login.", "err");
+          return;
+        }
+
+        localStorage.setItem(STORAGE_API_KEY, apiUrl);
+        usuarioLogado = {
+          ...res.usuario,
+          apiUrl
+        };
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(usuarioLogado));
+        abrirApp();
+      } catch (err) {
+        setMsg("msgLogin", "Erro de conexão com o servidor.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
+    }
+
+    function selecionarStatus(status) {
+      statusSelecionado = status;
+      const btnPago = document.getElementById("btnPago");
+      const btnPend = document.getElementById("btnPendente");
+
+      btnPago.className = status === "Pago" ? "toggle-btn active-pago" : "toggle-btn";
+      btnPend.className = status === "Pendente" ? "toggle-btn active-pendente" : "toggle-btn";
+    }
+
+    async function registrarVenda() {
+      limparMsg("msgApp");
+      const numCartela = document.getElementById("numCartela").value.trim();
+      const comprador = document.getElementById("nomeComprador").value.trim();
+
+      if (!numCartela || !comprador) {
+        setMsg("msgApp", "Informe o número da cartela e o nome do comprador.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnSalvarVenda");
+      btn.disabled = true;
+      btn.textContent = "Salvando...";
+
+      try {
+        const res = await chamarApi(usuarioLogado.apiUrl, {
+          acao: "registrarVenda",
+          numero_cartela: numCartela,
+          comprador,
+          pago: statusSelecionado === "Pago",
+          vendedor_login: usuarioLogado.login,
+          vendedor_nome: usuarioLogado.nome
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Não foi possível registrar.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        document.getElementById("numCartela").value = "";
+        document.getElementById("nomeComprador").value = "";
+        document.getElementById("numCartela").focus();
+        carregarVendas();
+      } catch (err) {
+        setMsg("msgApp", "Erro ao registrar venda.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Salvar Venda";
+      }
+    }
+
+    function trocarAba(aba) {
+      limparMsg("msgApp");
+      const isVenda = aba === "venda";
+      document.getElementById("abaVenda").classList.toggle("hidden", !isVenda);
+      document.getElementById("abaLista").classList.toggle("hidden", isVenda);
+      document.getElementById("navVenda").classList.toggle("ativo", isVenda);
+      document.getElementById("navLista").classList.toggle("ativo", !isVenda);
+
+      if (!isVenda) {
+        carregarVendas();
+      }
+    }
+
+    function mudarEscopoVendedor(escopo) {
+      escopoVendedor = escopo;
+      document.getElementById("filtroVendedor").classList.toggle("ativo", escopo === "meu");
+      document.getElementById("filtroTodos").classList.toggle("ativo", escopo === "todos");
+      renderizarVendas();
+    }
+
+    function mudarFiltroStatus(status) {
+      filtroStatus = status;
+      document.getElementById("stTodos").classList.toggle("ativo", status === "Todos");
+      document.getElementById("stPendente").classList.toggle("ativo", status === "Pendente");
+      document.getElementById("stPago").classList.toggle("ativo", status === "Pago");
+      renderizarVendas();
+    }
+
+    async function carregarVendas() {
+      try {
+        const res = await chamarApi(usuarioLogado.apiUrl, { acao: "listarVendas" });
+        if (res.sucesso && Array.isArray(res.vendas)) {
+          todasAsVendas = res.vendas;
+          renderizarVendas();
+        }
+      } catch (err) {
+        setMsg("msgApp", "Erro ao carregar lista de vendas.", "err");
+      }
+    }
+
+    function renderizarVendas() {
+      const container = document.getElementById("listaVendasContainer");
+      const termo = document.getElementById("buscaVenda").value.trim().toLowerCase();
+
+      const filtradas = todasAsVendas.filter((v) => {
+        if (escopoVendedor === "meu") {
+          if (String(v.vendedor_login).toLowerCase() !== String(usuarioLogado.login).toLowerCase()) {
+            return false;
+          }
+        }
+        if (filtroStatus !== "Todos" && v.status_pagamento !== filtroStatus) {
+          return false;
+        }
+        if (termo) {
+          const matchNum = String(v.numero_cartela).toLowerCase().includes(termo);
+          const matchComp = String(v.comprador).toLowerCase().includes(termo);
+          const matchCod = String(v.codigo_unico).toLowerCase().includes(termo);
+          if (!matchNum && !matchComp && !matchCod) return false;
+        }
+        return true;
+      });
+
+      if (filtradas.length === 0) {
+        container.innerHTML = `<div class="card" style="text-align:center; color:var(--muted);">Nenhuma cartela encontrada.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtradas.map((v) => {
+        const isPago = v.status_pagamento === "Pago";
+        const badgeClass = isPago ? "badge-pago" : "badge-pendente";
+        const botaoBaixa = !isPago
+          ? `<button class="btn-baixa" onclick="abrirModalBaixa('${v.id_venda}', '${escaparAspas(v.comprador)}')">Dar Baixa</button>`
+          : "";
+
+        return `
+          <div class="venda-item">
+            <div>
+              <div class="venda-num">
+                Cartela Nº ${v.numero_cartela}
+                <span class="badge ${badgeClass}">${v.status_pagamento}</span>
+              </div>
+              <div class="venda-comp">${escaparHtml(v.comprador)}</div>
+              <div class="venda-meta">
+                Cód: ${escaparHtml(v.codigo_unico)} • Vend: ${escaparHtml(v.vendedor_nome)}
+              </div>
+            </div>
+            ${botaoBaixa}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function abrirModalBaixa(idVenda, nomeComprador) {
+      vendaParaBaixa = { idVenda, nomeComprador };
+      document.getElementById("textoModalConfirmacao").textContent =
+        `Confirma o pagamento de ${nomeComprador}?`;
+      document.getElementById("modalBaixa").classList.add("aberto");
+    }
+
+    function fecharModalBaixa() {
+      vendaParaBaixa = null;
+      document.getElementById("modalBaixa").classList.remove("aberto");
+    }
+
+    async function confirmarBaixaPagamento() {
+      if (!vendaParaBaixa) return;
+      limparMsg("msgApp");
+
+      const btn = document.getElementById("btnConfirmarBaixa");
+      btn.disabled = true;
+      btn.textContent = "Confirmando...";
+
+      try {
+        const res = await chamarApi(usuarioLogado.apiUrl, {
+          acao: "darBaixa",
+          id_venda: vendaParaBaixa.idVenda
+        });
+
+        fecharModalBaixa();
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao dar baixa.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendas();
+      } catch (err) {
+        fecharModalBaixa();
+        setMsg("msgApp", "Erro de conexão ao confirmar pagamento.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Confirmar";
+      }
+    }
+
+    function escaparHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escaparAspas(str) {
+      return String(str || "").replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
