@@ -244,7 +244,7 @@
       background: #fff;
       border-top: 1px solid var(--border);
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       z-index: 20;
     }
 
@@ -282,6 +282,53 @@
       display: block;
       background: #fee2e2;
       color: #991b1b;
+    }
+
+    .conferencia-box {
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .conferencia-ok {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .conferencia-err {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+
+    .mini-bingo {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fff;
+      table-layout: fixed;
+    }
+
+    .mini-bingo th {
+      background: var(--primary);
+      color: #fff;
+      font-size: 12px;
+      padding: 5px 0;
+      border: 1px solid #cbd5e1;
+    }
+
+    .mini-bingo td {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 0;
+      border: 1px solid #cbd5e1;
+    }
+
+    .mini-bingo td.free {
+      background: #fef08a;
+      font-size: 10px;
     }
 
     /* Modal de Confirmação */
@@ -346,62 +393,11 @@
     .hidden {
       display: none !important;
     }
-
-    .bottom-nav {
-      grid-template-columns: 1fr 1fr 1fr;
-    }
-
-    .conferencia-box {
-      border-radius: 10px;
-      padding: 14px;
-      margin-top: 12px;
-      border: 1px solid var(--border);
-      background: #f8fafc;
-    }
-
-    .conferencia-ok {
-      border-color: #86efac;
-      background: #f0fdf4;
-    }
-
-    .conferencia-err {
-      border-color: #fca5a5;
-      background: #fef2f2;
-    }
-
-    .mini-bingo {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      background: #fff;
-      table-layout: fixed;
-    }
-
-    .mini-bingo th {
-      background: var(--primary);
-      color: #fff;
-      font-size: 12px;
-      padding: 5px 0;
-      border: 1px solid #cbd5e1;
-    }
-
-    .mini-bingo td {
-      text-align: center;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 6px 0;
-      border: 1px solid #cbd5e1;
-    }
-
-    .mini-bingo td.free {
-      background: #fef08a;
-      font-size: 10px;
-    }
   </style>
 </head>
 <body>
 
-  <!-- TELA DE LOGIN (APENAS NO PRIMEIRO ACESSO) -->
+  <!-- TELA DE LOGIN (URL OCULTA — APENAS USUÁRIO E PIN) -->
   <div id="telaLogin" class="container">
     <div class="card" style="margin-top: 24px;">
       <h2 style="margin: 0 0 6px 0; font-size: 19px;">🎱 Bingo Vendas</h2>
@@ -409,9 +405,6 @@
         Faça login apenas uma vez neste aparelho.
       </p>
       <div id="msgLogin" class="msg"></div>
-
-      <label for="apiUrl">URL do Web App (Apps Script)</label>
-      <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" />
 
       <label for="loginInput">Usuário / Login</label>
       <input type="text" id="loginInput" placeholder="Ex: vendedor1" autocomplete="username" />
@@ -461,7 +454,7 @@
         </button>
       </section>
 
-<!-- ABA 2: LISTA DE VENDIDOS -->
+      <!-- ABA 2: LISTA DE VENDIDOS -->
       <section id="abaLista" class="hidden">
         <div class="card" style="padding: 12px;">
           <div class="filtros-row">
@@ -544,35 +537,33 @@
   </div>
 
   <script>
-    // Se quiser deixar a URL fixa para os vendedores nem precisarem colar no primeiro login,
-    // coloque a URL do seu Web App do Apps Script entre as aspas abaixo:
+    // Cole aqui a URL /exec do seu Web App do Google Apps Script:
     const URL_PADRAO_API = "https://script.google.com/macros/s/AKfycbx9YnyX4UWJWCwlUeB_ECaAw-6NfpAbGLXTwWvDYjp2ItTCHezSEhErHVo73Ot5Nbucew/exec";
 
     const STORAGE_USER_KEY = "bingo_pwa_usuario_v1";
-    const STORAGE_API_KEY = "bingo_pwa_api_url_v1";
 
     let usuarioLogado = null;
     let statusSelecionado = "Pago";
-    let escopoVendedor = "meu"; // "meu" | "todos"
-    let filtroStatus = "Todos"; // "Todos" | "Pendente" | "Pago"
+    let escopoVendedor = "meu";
+    let filtroStatus = "Todos";
     let todasAsVendas = [];
     let vendaParaBaixa = null;
+
+    function obterApiUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("api") || URL_PADRAO_API;
+    }
 
     window.addEventListener("DOMContentLoaded", () => {
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("sw.js").catch(() => {});
       }
 
-      const apiSalva = localStorage.getItem(STORAGE_API_KEY) || URL_PADRAO_API;
-      if (apiSalva) {
-        document.getElementById("apiUrl").value = apiSalva;
-      }
-
       const userSalvo = localStorage.getItem(STORAGE_USER_KEY);
       if (userSalvo) {
         try {
           usuarioLogado = JSON.parse(userSalvo);
-          if (usuarioLogado && usuarioLogado.login && usuarioLogado.apiUrl) {
+          if (usuarioLogado && usuarioLogado.login) {
             abrirApp();
             return;
           }
@@ -613,7 +604,11 @@
       el.className = "msg";
     }
 
-    async function chamarApi(apiUrl, payload) {
+    async function chamarApi(payload) {
+      const apiUrl = obterApiUrl();
+      if (!apiUrl || apiUrl.includes("COLE_SUA_URL")) {
+        throw new Error("URL do servidor não configurada no código.");
+      }
       const resp = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -624,12 +619,11 @@
 
     async function fazerLogin() {
       limparMsg("msgLogin");
-      const apiUrl = document.getElementById("apiUrl").value.trim();
       const login = document.getElementById("loginInput").value.trim();
       const pin = document.getElementById("pinInput").value.trim();
 
-      if (!apiUrl || !login || !pin) {
-        setMsg("msgLogin", "Preencha a URL do Web App, o login e o PIN.", "err");
+      if (!login || !pin) {
+        setMsg("msgLogin", "Preencha o usuário e o PIN.", "err");
         return;
       }
 
@@ -638,21 +632,17 @@
       btn.textContent = "Entrando...";
 
       try {
-        const res = await chamarApi(apiUrl, { acao: "login", login, pin });
+        const res = await chamarApi({ acao: "login", login, pin });
         if (!res.sucesso) {
           setMsg("msgLogin", res.mensagem || "Falha no login.", "err");
           return;
         }
 
-        localStorage.setItem(STORAGE_API_KEY, apiUrl);
-        usuarioLogado = {
-          ...res.usuario,
-          apiUrl
-        };
+        usuarioLogado = res.usuario;
         localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(usuarioLogado));
         abrirApp();
       } catch (err) {
-        setMsg("msgLogin", "Erro de conexão com o servidor.", "err");
+        setMsg("msgLogin", err.message || "Erro de conexão com o servidor.", "err");
       } finally {
         btn.disabled = false;
         btn.textContent = "Entrar";
@@ -661,11 +651,8 @@
 
     function selecionarStatus(status) {
       statusSelecionado = status;
-      const btnPago = document.getElementById("btnPago");
-      const btnPend = document.getElementById("btnPendente");
-
-      btnPago.className = status === "Pago" ? "toggle-btn active-pago" : "toggle-btn";
-      btnPend.className = status === "Pendente" ? "toggle-btn active-pendente" : "toggle-btn";
+      document.getElementById("btnPago").className = status === "Pago" ? "toggle-btn active-pago" : "toggle-btn";
+      document.getElementById("btnPendente").className = status === "Pendente" ? "toggle-btn active-pendente" : "toggle-btn";
     }
 
     async function registrarVenda() {
@@ -683,7 +670,7 @@
       btn.textContent = "Salvando...";
 
       try {
-        const res = await chamarApi(usuarioLogado.apiUrl, {
+        const res = await chamarApi({
           acao: "registrarVenda",
           numero_cartela: numCartela,
           comprador,
@@ -710,7 +697,7 @@
       }
     }
 
-function trocarAba(aba) {
+    function trocarAba(aba) {
       limparMsg("msgApp");
       const isVenda = aba === "venda";
       const isLista = aba === "lista";
@@ -729,92 +716,6 @@ function trocarAba(aba) {
       }
     }
 
-    async function consultarCodigoCartela() {
-      limparMsg("msgApp");
-      const codigo = document.getElementById("codigoConferencia").value.trim().toUpperCase();
-      const numero = document.getElementById("numeroConferencia").value.trim();
-      const box = document.getElementById("resultadoConferencia");
-
-      if (!codigo && !numero) {
-        box.innerHTML = `<div class="conferencia-box conferencia-err">Digite o código único ou o número da cartela.</div>`;
-        return;
-      }
-
-      const btn = document.getElementById("btnConsultarCodigo");
-      btn.disabled = true;
-      btn.textContent = "Consultando...";
-
-      try {
-        const res = await chamarApi(usuarioLogado.apiUrl, {
-          acao: "consultarCartela",
-          codigo_unico: codigo,
-          numero_cartela: numero
-        });
-
-        if (!res.sucesso || !res.valido) {
-          box.innerHTML = `<div class="conferencia-box conferencia-err"><strong>${escaparHtml(res.mensagem || "Cartela inválida.")}</strong></div>`;
-          return;
-        }
-
-        renderizarResultadoConferencia(res.cartela, res.venda);
-      } catch (err) {
-        box.innerHTML = `<div class="conferencia-box conferencia-err">Erro de conexão ao consultar a cartela.</div>`;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Consultar Cartela";
-      }
-    }
-
-    function renderizarResultadoConferencia(cartela, venda) {
-      const box = document.getElementById("resultadoConferencia");
-      const cols = [
-        cartela.col_B.split(","),
-        cartela.col_I.split(","),
-        cartela.col_N.split(","),
-        cartela.col_G.split(","),
-        cartela.col_O.split(",")
-      ];
-
-      let linhasTabela = "";
-      for (let r = 0; r < 5; r++) {
-        let tds = "";
-        for (let c = 0; c < 5; c++) {
-          const isCentro = (r === 2 && c === 2);
-          const val = (cols[c] && cols[c][r] !== undefined) ? cols[c][r] : "";
-          tds += `<td class="${isCentro ? "free" : ""}">${escaparHtml(val)}</td>`;
-        }
-        linhasTabela += `<tr>${tds}</tr>`;
-      }
-
-      const vendaHtml = venda
-        ? `
-          <div style="margin-top:8px; font-size:13px;">
-            <strong>Comprador:</strong> ${escaparHtml(venda.comprador)}<br/>
-            <strong>Pagamento:</strong> ${escaparHtml(venda.status_pagamento)}<br/>
-            <strong>Vendedor:</strong> ${escaparHtml(venda.vendedor_nome)} (@${escaparHtml(venda.vendedor_login)})
-          </div>
-        `
-        : `<div style="margin-top:8px; font-size:13px; color:#334155;"><strong>Situação:</strong> Ainda não registrada como vendida.</div>`;
-
-      box.innerHTML = `
-        <div class="conferencia-box conferencia-ok">
-          <div style="font-size:14px; font-weight:800; color:#166534;">
-            ✅ CARTELA AUTÊNTICA — Nº ${escaparHtml(cartela.numero_cartela)}
-          </div>
-          <div style="font-size:12px; font-weight:700; margin-top:4px;">
-            Código Único: ${escaparHtml(cartela.codigo_unico)} • Base: ${escaparHtml(cartela.status_base)}
-          </div>
-          ${vendaHtml}
-          <table class="mini-bingo">
-            <thead>
-              <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
-            </thead>
-            <tbody>${linhasTabela}</tbody>
-          </table>
-        </div>
-      `;
-    }
-    
     function mudarEscopoVendedor(escopo) {
       escopoVendedor = escopo;
       document.getElementById("filtroVendedor").classList.toggle("ativo", escopo === "meu");
@@ -832,7 +733,7 @@ function trocarAba(aba) {
 
     async function carregarVendas() {
       try {
-        const res = await chamarApi(usuarioLogado.apiUrl, { acao: "listarVendas" });
+        const res = await chamarApi({ acao: "listarVendas" });
         if (res.sucesso && Array.isArray(res.vendas)) {
           todasAsVendas = res.vendas;
           renderizarVendas();
@@ -915,7 +816,7 @@ function trocarAba(aba) {
       btn.textContent = "Confirmando...";
 
       try {
-        const res = await chamarApi(usuarioLogado.apiUrl, {
+        const res = await chamarApi({
           acao: "darBaixa",
           id_venda: vendaParaBaixa.idVenda
         });
@@ -936,6 +837,92 @@ function trocarAba(aba) {
         btn.disabled = false;
         btn.textContent = "Confirmar";
       }
+    }
+
+    async function consultarCodigoCartela() {
+      limparMsg("msgApp");
+      const codigo = document.getElementById("codigoConferencia").value.trim().toUpperCase();
+      const numero = document.getElementById("numeroConferencia").value.trim();
+      const box = document.getElementById("resultadoConferencia");
+
+      if (!codigo && !numero) {
+        box.innerHTML = `<div class="conferencia-box conferencia-err">Digite o código único ou o número da cartela.</div>`;
+        return;
+      }
+
+      const btn = document.getElementById("btnConsultarCodigo");
+      btn.disabled = true;
+      btn.textContent = "Consultando...";
+
+      try {
+        const res = await chamarApi({
+          acao: "consultarCartela",
+          codigo_unico: codigo,
+          numero_cartela: numero
+        });
+
+        if (!res.sucesso || !res.valido) {
+          box.innerHTML = `<div class="conferencia-box conferencia-err"><strong>${escaparHtml(res.mensagem || "Cartela inválida.")}</strong></div>`;
+          return;
+        }
+
+        renderizarResultadoConferencia(res.cartela, res.venda);
+      } catch (err) {
+        box.innerHTML = `<div class="conferencia-box conferencia-err">Erro de conexão ao consultar a cartela.</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Consultar Cartela";
+      }
+    }
+
+    function renderizarResultadoConferencia(cartela, venda) {
+      const box = document.getElementById("resultadoConferencia");
+      const cols = [
+        cartela.col_B.split(","),
+        cartela.col_I.split(","),
+        cartela.col_N.split(","),
+        cartela.col_G.split(","),
+        cartela.col_O.split(",")
+      ];
+
+      let linhasTabela = "";
+      for (let r = 0; r < 5; r++) {
+        let tds = "";
+        for (let c = 0; c < 5; c++) {
+          const isCentro = (r === 2 && c === 2);
+          const val = (cols[c] && cols[c][r] !== undefined) ? cols[c][r] : "";
+          tds += `<td class="${isCentro ? "free" : ""}">${escaparHtml(val)}</td>`;
+        }
+        linhasTabela += `<tr>${tds}</tr>`;
+      }
+
+      const vendaHtml = venda
+        ? `
+          <div style="margin-top:8px; font-size:13px;">
+            <strong>Comprador:</strong> ${escaparHtml(venda.comprador)}<br/>
+            <strong>Pagamento:</strong> ${escaparHtml(venda.status_pagamento)}<br/>
+            <strong>Vendedor:</strong> ${escaparHtml(venda.vendedor_nome)} (@${escaparHtml(venda.vendedor_login)})
+          </div>
+        `
+        : `<div style="margin-top:8px; font-size:13px; color:#334155;"><strong>Situação:</strong> Ainda não registrada como vendida.</div>`;
+
+      box.innerHTML = `
+        <div class="conferencia-box conferencia-ok">
+          <div style="font-size:14px; font-weight:800; color:#166534;">
+            ✅ CARTELA AUTÊNTICA — Nº ${escaparHtml(cartela.numero_cartela)}
+          </div>
+          <div style="font-size:12px; font-weight:700; margin-top:4px;">
+            Código Único: ${escaparHtml(cartela.codigo_unico)} • Base: ${escaparHtml(cartela.status_base)}
+          </div>
+          ${vendaHtml}
+          <table class="mini-bingo">
+            <thead>
+              <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+            </thead>
+            <tbody>${linhasTabela}</tbody>
+          </table>
+        </div>
+      `;
     }
 
     function escaparHtml(str) {
