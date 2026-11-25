@@ -446,7 +446,45 @@
     .hidden {
       display: none !important;
     }
+    
+    .btn-qr {
+      width: 100%;
+      padding: 11px;
+      border-radius: 9px;
+      border: 1.5px solid var(--primary);
+      background: #f8fafc;
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    #qrReaderContainer {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1px solid #cbd5e1;
+      background: #000;
+    }
   </style>
+  
+  <!-- MODAL DO LEITOR DE QR CODE -->
+  <div id="modalQrScanner" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="margin:0 0 10px 0; font-size:17px;">📷 Aponte para o QR Code</h3>
+      <div id="qrReaderContainer"></div>
+      <button type="button" class="btn-cancelar" style="width:100%;" onclick="fecharLeitorQr()">
+        Fechar Câmera
+      </button>
+    </div>
+  </div>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -485,7 +523,9 @@
       <!-- ABA 1: REGISTRAR VENDA -->
       <section id="abaVenda" class="card">
         <h2 style="margin: 0 0 14px 0; font-size: 17px;">Registrar Nova Venda</h2>
-
+        <button type="button" class="btn-qr" onclick="abrirLeitorQr('venda')">
+          📷 Ler QR Code da Cartela
+        </button>
         <label for="numCartela">Número da Cartela</label>
         <input type="number" id="numCartela" placeholder="Ex: 1" min="1" inputmode="numeric" />
 
@@ -553,7 +593,9 @@
       <!-- ABA 3: CONFERÊNCIA RÁPIDA DO CÓDIGO ÚNICO -->
       <section id="abaConferir" class="card hidden">
         <h2 style="margin: 0 0 12px 0; font-size: 17px;">Conferir Cartela / Código Único</h2>
-
+        <button type="button" class="btn-qr" onclick="abrirLeitorQr('conferir')">
+          📷 Escanear QR Code
+        </button>
         <label for="codigoConferencia">Código Único de Marcação</label>
         <input
           type="text"
@@ -779,7 +821,21 @@
     let vendaEditando = null;
     let vendaExcluindo = null;
     let modoModalVendedor = "criar";
+    let html5QrScanner = null;
+    let destinoLeituraQr = "conferir"; // "venda" | "conferir"
 
+    function extrairNumeroDoCodigoQr(textoQr) {
+      // Formato gerado no Codigo.gs: PREFIXO-0001-HEX (ex: GBN-0001-9B7797)
+      const partes = String(textoQr || "").trim().toUpperCase().split("-");
+      if (partes.length >= 2 && /^\d+$/.test(partes[1])) {
+        return String(Number(partes[1]));
+      }
+      if (/^\d+$/.test(textoQr.trim())) {
+        return String(Number(textoQr.trim()));
+      }
+      return "";
+    }
+    
     function isAdmin() {
       return usuarioLogado && String(usuarioLogado.perfil || "").toLowerCase() === "admin";
     }
@@ -841,6 +897,7 @@
     }
 
     function sairConta() {
+      fecharLeitorQr();
       localStorage.removeItem(STORAGE_USER_KEY);
       usuarioLogado = null;
       mostrarTelaLogin();
@@ -856,6 +913,61 @@
       const el = document.getElementById(idElemento);
       el.textContent = "";
       el.className = "msg";
+    }
+
+    async function abrirLeitorQr(destino) {
+      limparMsg("msgApp");
+      if (typeof Html5Qrcode === "undefined") {
+        setMsg("msgApp", "Biblioteca de câmera ainda carregando. Tente novamente em instantes.", "err");
+        return;
+      }
+
+      destinoLeituraQr = destino;
+      document.getElementById("modalQrScanner").classList.add("aberto");
+
+      try {
+        html5QrScanner = new Html5Qrcode("qrReaderContainer");
+        await html5QrScanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          async (textoLido) => {
+            const codigoLimpo = String(textoLido || "").trim().toUpperCase();
+            await fecharLeitorQr();
+
+            if (destinoLeituraQr === "venda") {
+              const numExtraido = extrairNumeroDoCodigoQr(codigoLimpo);
+              if (!numExtraido) {
+                setMsg("msgApp", `QR Code lido (${codigoLimpo}), mas não foi possível identificar o número da cartela.`, "err");
+                return;
+              }
+              document.getElementById("numCartela").value = numExtraido;
+              document.getElementById("nomeComprador").focus();
+              setMsg("msgApp", `Cartela Nº ${numExtraido.padStart(4, "0")} identificada! Informe o comprador.`, "ok");
+            } else {
+              document.getElementById("codigoConferencia").value = codigoLimpo;
+              document.getElementById("numeroConferencia").value = "";
+              consultarCodigoCartela();
+            }
+          },
+          () => {}
+        );
+      } catch (err) {
+        await fecharLeitorQr();
+        setMsg("msgApp", "Não foi possível acessar a câmera. Verifique a permissão no navegador.", "err");
+      }
+    }
+
+    async function fecharLeitorQr() {
+      document.getElementById("modalQrScanner").classList.remove("aberto");
+      if (html5QrScanner) {
+        try {
+          if (html5QrScanner.isScanning) {
+            await html5QrScanner.stop();
+          }
+          html5QrScanner.clear();
+        } catch (e) {}
+        html5QrScanner = null;
+      }
     }
 
     async function chamarApi(payload) {
@@ -953,6 +1065,7 @@
     }
 
     function trocarAba(aba) {
+      fecharLeitorQr();
       limparMsg("msgApp");
       const isVenda = aba === "venda";
       const isLista = aba === "lista";
