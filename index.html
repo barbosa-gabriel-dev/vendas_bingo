@@ -450,7 +450,7 @@
 </head>
 <body>
 
-  <!-- TELA DE LOGIN -->
+  <!-- TELA DE LOGIN (URL OCULTA — APENAS USUÁRIO E PIN) -->
   <div id="telaLogin" class="container">
     <div class="card" style="margin-top: 24px;">
       <h2 style="margin: 0 0 6px 0; font-size: 19px;">🎱 Bingo Vendas</h2>
@@ -518,7 +518,7 @@
               Minhas Vendas
             </button>
             <select id="selectFiltroVendedor" style="margin-bottom:0; width:auto; padding:6px 10px; font-size:12px;" onchange="renderizarVendas()">
-              <option value="">Filtrar vendedor...</option>
+              <option value="">Todos vendedores</option>
             </select>
             <button class="chip" style="margin-left: auto;" onclick="carregarVendas()">
               🔄 Atualizar
@@ -578,8 +578,31 @@
         <div id="resultadoConferencia"></div>
       </section>
 
-      <!-- ABA 4 (ADMIN): ATRIBUIR E RETIRAR CARTELAS -->
+      <!-- ABA 4 (ADMIN): GERAR LOTE, ATRIBUIR/RETIRAR CARTELAS E EQUIPE -->
       <section id="abaAdminCartelas" class="hidden">
+        <!-- GERAR NOVO LOTE INCREMENTAL -->
+        <div class="card">
+          <h2 style="margin: 0 0 6px 0; font-size: 17px;">Gerar Cartelas (Lote Incremental)</h2>
+          <p id="infoResumoBase" style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted);">
+            Carregando numeração atual da base...
+          </p>
+
+          <label for="qtdGerarLote">Quantidade de cartelas a gerar agora</label>
+          <input
+            type="number"
+            id="qtdGerarLote"
+            placeholder="Ex: 100 ou 50"
+            min="1"
+            max="500"
+            inputmode="numeric"
+          />
+
+          <button id="btnGerarLote" class="btn-primary" onclick="gerarNovoLoteAdmin()">
+            🎱 Gerar Novo Lote
+          </button>
+        </div>
+
+        <!-- ATRIBUIR FAIXA -->
         <div class="card">
           <h2 style="margin: 0 0 12px 0; font-size: 17px;">Atribuir Faixa de Cartelas a Vendedor</h2>
 
@@ -602,6 +625,7 @@
           </button>
         </div>
 
+        <!-- RETIRAR FAIXA -->
         <div class="card">
           <h2 style="margin: 0 0 10px 0; font-size: 16px;">Retirar Faixa de Cartelas</h2>
           <div class="grid-2">
@@ -614,61 +638,26 @@
               <input type="number" id="retFinal" placeholder="Ex: 50" min="1" inputmode="numeric" />
             </div>
           </div>
-          <button class="btn-sm btn-retirar" style="width:100%; padding:11px; font-size:14px;" onclick="retirarFaixaManual()">
+          <button id="btnRetirar" class="btn-sm btn-retirar" style="width:100%; padding:11px; font-size:14px;" onclick="retirarFaixaManual()">
             Retirar Intervalo Informado
           </button>
         </div>
+
+        <!-- FAIXAS ATIVAS -->
         <div class="card">
-          <h3 style="margin: 0 0 10px 0; font-size: 15px;">Histórico de Atribuições</h3>
+          <h3 style="margin: 0 0 10px 0; font-size: 15px;">Faixas Atribuídas Atualmente</h3>
           <div id="listaAtribuicoes"></div>
         </div>
+
+        <!-- EQUIPE / CADASTRO E EDIÇÃO DE VENDEDORES -->
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
-            <h3 style="margin:0; font-size:15px;">Equipe e Faixas Atribuídas</h3>
+            <h3 style="margin:0; font-size:15px;">Equipe de Vendedores</h3>
             <button type="button" class="btn-sm btn-baixa" onclick="abrirModalVendedor()">
               + Novo Vendedor
             </button>
           </div>
           <div id="listaVendedoresAdmin"></div>
-        </div>
-        <!-- MODAL DE CADASTRO / EDIÇÃO DE VENDEDOR -->
-        <div id="modalVendedor" class="modal-backdrop">
-          <div class="modal-box">
-            <h3 id="tituloModalVendedor" style="margin:0 0 12px 0; font-size:17px;">Novo Vendedor</h3>
-      
-            <label for="vendLoginInput">Login (sem espaços)</label>
-            <input type="text" id="vendLoginInput" placeholder="Ex: maria" />
-      
-            <label for="vendNomeInput">Nome Completo</label>
-            <input type="text" id="vendNomeInput" placeholder="Ex: Maria Souza" />
-      
-            <div class="grid-2">
-              <div>
-                <label for="vendPinInput">PIN / Senha</label>
-                <input type="text" id="vendPinInput" placeholder="Ex: 1234" inputmode="numeric" />
-              </div>
-              <div>
-                <label for="vendPerfilInput">Perfil</label>
-                <select id="vendPerfilInput">
-                  <option value="Vendedor">Vendedor</option>
-                  <option value="Admin">Admin</option>
-                </select>
-              </div>
-            </div>
-      
-            <label for="vendAtivoInput">Status no Sistema</label>
-            <select id="vendAtivoInput">
-              <option value="SIM">Ativo (SIM)</option>
-              <option value="NAO">Inativo (NAO)</option>
-            </select>
-      
-            <div class="modal-acoes">
-              <button type="button" class="btn-cancelar" onclick="fecharModalVendedor()">Cancelar</button>
-              <button type="button" id="btnSalvarVendedor" class="btn-confirmar" onclick="salvarVendedorModal()">
-                Salvar
-              </button>
-            </div>
-          </div>
         </div>
       </section>
     </div>
@@ -732,7 +721,48 @@
     </div>
   </div>
 
+  <!-- MODAL DE CADASTRO / EDIÇÃO DE VENDEDOR -->
+  <div id="modalVendedor" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 id="tituloModalVendedor" style="margin:0 0 12px 0; font-size:17px;">Novo Vendedor</h3>
+
+      <label for="vendLoginInput">Login (sem espaços)</label>
+      <input type="text" id="vendLoginInput" placeholder="Ex: maria" />
+
+      <label for="vendNomeInput">Nome Completo</label>
+      <input type="text" id="vendNomeInput" placeholder="Ex: Maria Souza" />
+
+      <div class="grid-2">
+        <div>
+          <label for="vendPinInput">PIN / Senha</label>
+          <input type="text" id="vendPinInput" placeholder="Ex: 1234" inputmode="numeric" />
+        </div>
+        <div>
+          <label for="vendPerfilInput">Perfil</label>
+          <select id="vendPerfilInput">
+            <option value="Vendedor">Vendedor</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="vendAtivoInput">Status no Sistema</label>
+      <select id="vendAtivoInput">
+        <option value="SIM">Ativo (SIM)</option>
+        <option value="NAO">Inativo (NAO)</option>
+      </select>
+
+      <div class="modal-acoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalVendedor()">Cancelar</button>
+        <button type="button" id="btnSalvarVendedor" class="btn-confirmar" onclick="salvarVendedorModal()">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    // Cole aqui a URL /exec do seu Web App do Google Apps Script:
     const URL_PADRAO_API = "https://script.google.com/macros/s/AKfycbx9YnyX4UWJWCwlUeB_ECaAw-6NfpAbGLXTwWvDYjp2ItTCHezSEhErHVo73Ot5Nbucew/exec";
     const STORAGE_USER_KEY = "bingo_pwa_usuario_v2";
 
@@ -1162,18 +1192,76 @@
       }
     }
 
-    // --- ADMIN: ATRIBUIR E RETIRAR CARTELAS ---
+    // --- ADMIN: LOTE INCREMENTAL, ATRIBUIÇÃO E EQUIPE ---
+    async function carregarResumoBaseAdmin() {
+      try {
+        const res = await chamarApi({ acao: "resumoBase" });
+        if (res.sucesso) {
+          const el = document.getElementById("infoResumoBase");
+          if (res.total_cartelas === 0) {
+            el.innerHTML = `Nenhuma cartela gerada ainda. O primeiro lote começará em <strong>${String(res.proximo_numero).padStart(4, "0")}</strong>.`;
+          } else {
+            el.innerHTML = `Total gerado: <strong>${res.total_cartelas}</strong> (última: <strong>${String(res.maior_numero).padStart(4, "0")}</strong>) • Próximo lote inicia em <strong>${String(res.proximo_numero).padStart(4, "0")}</strong>.`;
+          }
+        }
+      } catch (err) {}
+    }
+
+    async function gerarNovoLoteAdmin() {
+      limparMsg("msgApp");
+      const qtd = Number(document.getElementById("qtdGerarLote").value.trim());
+      if (!qtd || qtd < 1) {
+        setMsg("msgApp", "Informe a quantidade de cartelas para gerar (ex: 100).", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnGerarLote");
+      btn.disabled = true;
+      btn.textContent = "Gerando cartelas...";
+
+      try {
+        const res = await chamarApi({
+          acao: "gerarLoteCartelas",
+          quantidade: qtd,
+          perfil: usuarioLogado.perfil || ""
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao gerar lote.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        document.getElementById("qtdGerarLote").value = "";
+        await carregarResumoBaseAdmin();
+      } catch (err) {
+        setMsg("msgApp", "Erro de conexão ao gerar cartelas.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🎱 Gerar Novo Lote";
+      }
+    }
+
     async function carregarVendedoresEAtribuicoes() {
+      carregarResumoBaseAdmin();
       try {
         const resVend = await chamarApi({ acao: "listarVendedores" });
         if (resVend.sucesso && Array.isArray(resVend.vendedores)) {
-          listaVendedores = resVend.vendedores;
+          listaVendedores = resVend.vendedores.map(v => {
+            const ativoRaw = String(v.ativo || "SIM").trim().toUpperCase();
+            return {
+              ...v,
+              ativo: (ativoRaw === "NAO" || ativoRaw === "NÃO") ? "NAO" : "SIM"
+            };
+          });
+
+          const ativos = listaVendedores.filter(v => v.ativo !== "NAO");
           const selectAtr = document.getElementById("atrVendedor");
           const selectFiltro = document.getElementById("selectFiltroVendedor");
 
-          selectAtr.innerHTML = listaVendedores.map(v =>
-            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</option>`
-          ).join("");
+          selectAtr.innerHTML = ativos.length
+            ? ativos.map(v => `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</option>`).join("")
+            : `<option value="">Nenhum vendedor ativo</option>`;
 
           const valorAtualFiltro = selectFiltro.value;
           selectFiltro.innerHTML = `<option value="">Todos vendedores</option>` + listaVendedores.map(v =>
@@ -1182,6 +1270,7 @@
           selectFiltro.value = valorAtualFiltro;
 
           renderizarFaixasPorVendedor(listaVendedores);
+          renderizarListaVendedoresAdmin(listaVendedores);
         }
       } catch (err) {}
     }
@@ -1206,7 +1295,116 @@
         </div>
       `).join("");
     }
-    
+
+    function renderizarListaVendedoresAdmin(vendedores) {
+      const cont = document.getElementById("listaVendedoresAdmin");
+      if (!vendedores.length) {
+        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhum vendedor cadastrado.</div>`;
+        return;
+      }
+
+      cont.innerHTML = vendedores.map(v => {
+        const isAtivo = v.ativo !== "NAO";
+        const badgeStatus = isAtivo
+          ? `<span class="badge badge-pago">Ativo</span>`
+          : `<span class="badge badge-retirada">Inativo</span>`;
+
+        return `
+          <div class="venda-item">
+            <div class="venda-topo">
+              <div>
+                <div class="venda-num">
+                  ${escaparHtml(v.nome)}
+                  <span class="badge badge-ativa">${escaparHtml(v.perfil)}</span>
+                  ${badgeStatus}
+                </div>
+                <div class="venda-meta">
+                  Login: @${escaparHtml(v.login)} • PIN: ${escaparHtml(v.pin || "••••")}
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-sm btn-editar"
+                onclick="abrirModalVendedor('${escaparAspas(v.login)}', '${escaparAspas(v.nome)}', '${escaparAspas(v.pin || "")}', '${escaparAspas(v.perfil)}', '${isAtivo ? "SIM" : "NAO"}')"
+              >
+                Editar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function abrirModalVendedor(login = "", nome = "", pin = "", perfil = "Vendedor", ativo = "SIM") {
+      const editando = Boolean(login);
+      modoModalVendedor = editando ? "editar" : "criar";
+
+      document.getElementById("tituloModalVendedor").textContent = editando
+        ? `Editar Vendedor (@${login})`
+        : "Novo Vendedor";
+
+      const inpLogin = document.getElementById("vendLoginInput");
+      inpLogin.value = login;
+      inpLogin.disabled = editando;
+
+      document.getElementById("vendNomeInput").value = nome;
+      document.getElementById("vendPinInput").value = pin;
+      document.getElementById("vendPerfilInput").value = perfil;
+      document.getElementById("vendAtivoInput").value = ativo === "NAO" ? "NAO" : "SIM";
+
+      document.getElementById("modalVendedor").classList.add("aberto");
+    }
+
+    function fecharModalVendedor() {
+      document.getElementById("modalVendedor").classList.remove("aberto");
+    }
+
+    async function salvarVendedorModal() {
+      limparMsg("msgApp");
+      const login = document.getElementById("vendLoginInput").value.trim().toLowerCase();
+      const nome = document.getElementById("vendNomeInput").value.trim();
+      const pin = document.getElementById("vendPinInput").value.trim();
+      const perfil = document.getElementById("vendPerfilInput").value;
+      const ativo = document.getElementById("vendAtivoInput").value;
+
+      if (!login || !nome || !pin) {
+        setMsg("msgApp", "Preencha Login, Nome Completo e PIN.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnSalvarVendedor");
+      btn.disabled = true;
+      btn.textContent = "Salvando...";
+
+      try {
+        const res = await chamarApi({
+          acao: "salvarVendedor",
+          modo: modoModalVendedor,
+          login,
+          nome,
+          pin,
+          perfil,
+          ativo
+        });
+
+        fecharModalVendedor();
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao salvar vendedor.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendedoresEAtribuicoes();
+      } catch (err) {
+        fecharModalVendedor();
+        setMsg("msgApp", "Erro de conexão ao salvar vendedor.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Salvar";
+      }
+    }
+
     async function atribuirFaixaCartelas() {
       limparMsg("msgApp");
       const vendedorLogin = document.getElementById("atrVendedor").value;
@@ -1248,26 +1446,23 @@
     }
 
     async function retirarFaixaManual() {
+      limparMsg("msgApp");
       const inicial = document.getElementById("retInicial").value.trim();
       const finalNum = document.getElementById("retFinal").value.trim();
       if (!inicial || !finalNum) {
         setMsg("msgApp", "Informe a cartela inicial e final para retirar.", "err");
         return;
       }
-      await retirarFaixa("", inicial, finalNum, "");
-      document.getElementById("retInicial").value = "";
-      document.getElementById("retFinal").value = "";
-    }
 
-    async function retirarFaixa(idAtribuicao, inicial, finalNum, vendedorLogin) {
-      limparMsg("msgApp");
+      const btn = document.getElementById("btnRetirar");
+      btn.disabled = true;
+      btn.textContent = "Retirando...";
+
       try {
         const res = await chamarApi({
           acao: "retirarCartelas",
-          id_atribuicao: idAtribuicao,
           cartela_inicial: inicial,
-          cartela_final: finalNum,
-          vendedor_login: vendedorLogin
+          cartela_final: finalNum
         });
 
         if (!res.sucesso) {
@@ -1276,9 +1471,14 @@
         }
 
         setMsg("msgApp", res.mensagem, "ok");
+        document.getElementById("retInicial").value = "";
+        document.getElementById("retFinal").value = "";
         await carregarVendedoresEAtribuicoes();
       } catch (err) {
         setMsg("msgApp", "Erro de conexão ao retirar cartelas.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Retirar Intervalo Informado";
       }
     }
 
@@ -1383,162 +1583,7 @@
     }
 
     function escaparAspas(str) {
-      return String(str || "").replace(/'/g, "\\'");
-    }
-
-    async function carregarVendedoresEAtribuicoes() {
-      try {
-        const resVend = await chamarApi({ acao: "listarVendedores" });
-        if (resVend.sucesso && Array.isArray(resVend.vendedores)) {
-          listaVendedores = resVend.vendedores;
-          const ativos = listaVendedores.filter(v => v.ativo === "SIM");
-
-          const selectAtr = document.getElementById("atrVendedor");
-          const selectFiltro = document.getElementById("selectFiltroVendedor");
-
-          selectAtr.innerHTML = ativos.map(v =>
-            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</option>`
-          ).join("");
-
-          const valorAtualFiltro = selectFiltro.value;
-          selectFiltro.innerHTML = `<option value="">Todos vendedores</option>` + listaVendedores.map(v =>
-            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)}</option>`
-          ).join("");
-          selectFiltro.value = valorAtualFiltro;
-
-          renderizarFaixasPorVendedor(listaVendedores);
-          renderizarListaVendedoresAdmin(listaVendedores);
-        }
-      } catch (err) {}
-    }
-
-    function renderizarFaixasPorVendedor(vendedores) {
-      const cont = document.getElementById("listaAtribuicoes");
-      const comFaixas = vendedores.filter(v => v.faixas_atribuidas);
-
-      if (!comFaixas.length) {
-        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhuma cartela atribuída no momento.</div>`;
-        return;
-      }
-
-      cont.innerHTML = comFaixas.map(v => `
-        <div class="venda-item">
-          <div class="venda-topo">
-            <div>
-              <div class="venda-num">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</div>
-              <div class="venda-comp">Faixas: <strong>${escaparHtml(v.faixas_atribuidas)}</strong></div>
-            </div>
-          </div>
-        </div>
-      `).join("");
-    }
-
-    function renderizarListaVendedoresAdmin(vendedores) {
-      const cont = document.getElementById("listaVendedoresAdmin");
-      if (!vendedores.length) {
-        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhum vendedor cadastrado.</div>`;
-        return;
-      }
-
-      cont.innerHTML = vendedores.map(v => {
-        const badgeStatus = v.ativo === "SIM"
-          ? `<span class="badge badge-pago">Ativo</span>`
-          : `<span class="badge badge-retirada">Inativo</span>`;
-
-        return `
-          <div class="venda-item">
-            <div class="venda-topo">
-              <div>
-                <div class="venda-num">
-                  ${escaparHtml(v.nome)}
-                  <span class="badge badge-ativa">${escaparHtml(v.perfil)}</span>
-                  ${badgeStatus}
-                </div>
-                <div class="venda-meta">
-                  Login: @${escaparHtml(v.login)} • PIN: ${escaparHtml(v.pin)}
-                </div>
-              </div>
-              <button
-                type="button"
-                class="btn-sm btn-editar"
-                onclick="abrirModalVendedor('${escaparAspas(v.login)}', '${escaparAspas(v.nome)}', '${escaparAspas(v.pin)}', '${escaparAspas(v.perfil)}', '${escaparAspas(v.ativo)}')"
-              >
-                Editar
-              </button>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function abrirModalVendedor(login = "", nome = "", pin = "", perfil = "Vendedor", ativo = "SIM") {
-      const editando = Boolean(login);
-      modoModalVendedor = editando ? "editar" : "criar";
-
-      document.getElementById("tituloModalVendedor").textContent = editando
-        ? `Editar Vendedor (@${login})`
-        : "Novo Vendedor";
-
-      const inpLogin = document.getElementById("vendLoginInput");
-      inpLogin.value = login;
-      inpLogin.disabled = editando;
-
-      document.getElementById("vendNomeInput").value = nome;
-      document.getElementById("vendPinInput").value = pin;
-      document.getElementById("vendPerfilInput").value = perfil;
-      document.getElementById("vendAtivoInput").value = ativo;
-
-      document.getElementById("modalVendedor").classList.add("aberto");
-    }
-
-    function fecharModalVendedor() {
-      document.getElementById("modalVendedor").classList.remove("aberto");
-    }
-
-    async function salvarVendedorModal() {
-      limparMsg("msgApp");
-      const login = document.getElementById("vendLoginInput").value.trim().toLowerCase();
-      const nome = document.getElementById("vendNomeInput").value.trim();
-      const pin = document.getElementById("vendPinInput").value.trim();
-      const perfil = document.getElementById("vendPerfilInput").value;
-      const ativo = document.getElementById("vendAtivoInput").value;
-
-      if (!login || !nome || !pin) {
-        setMsg("msgApp", "Preencha Login, Nome Completo e PIN.", "err");
-        return;
-      }
-
-      const btn = document.getElementById("btnSalvarVendedor");
-      btn.disabled = true;
-      btn.textContent = "Salvando...";
-
-      try {
-        const res = await chamarApi({
-          acao: "salvarVendedor",
-          modo: modoModalVendedor,
-          login,
-          nome,
-          pin,
-          perfil,
-          ativo
-        });
-
-        fecharModalVendedor();
-
-        if (!res.sucesso) {
-          setMsg("msgApp", res.mensagem || "Erro ao salvar vendedor.", "err");
-          return;
-        }
-
-        setMsg("msgApp", res.mensagem, "ok");
-        await carregarVendedoresEAtribuicoes();
-      } catch (err) {
-        fecharModalVendedor();
-        setMsg("msgApp", "Erro de conexão ao salvar vendedor.", "err");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Salvar";
-      }
+      return String(str || "").replace(/'/g, "\'");
     }
   </script>
 </body>
