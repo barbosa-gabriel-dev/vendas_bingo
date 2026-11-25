@@ -613,9 +613,9 @@
         <div id="resultadoConferencia"></div>
       </section>
 
-      <!-- ABA 4 (ADMIN): GERAR LOTE, ATRIBUIR/RETIRAR CARTELAS E EQUIPE -->
+      <!-- ABA 4 (ADMIN): GERAR LOTE, EXPORTAR PDF, ATRIBUIR/RETIRAR CARTELAS E EQUIPE -->
       <section id="abaAdminCartelas" class="hidden">
-        <!-- GERAR NOVO LOTE INCREMENTAL -->
+        <!-- GERAR NOVO LOTE INCREMENTAL + PDF -->
         <div class="card">
           <h2 style="margin: 0 0 6px 0; font-size: 17px;">Gerar Cartelas (Lote Incremental)</h2>
           <p id="infoResumoBase" style="margin: 0 0 12px 0; font-size: 13px; color: var(--muted);">
@@ -626,14 +626,37 @@
           <input
             type="number"
             id="qtdGerarLote"
-            placeholder="Ex: 100 ou 50"
+            placeholder="Ex: 50 ou 100"
             min="1"
-            max="500"
+            max="200"
             inputmode="numeric"
           />
 
-          <button id="btnGerarLote" class="btn-primary" onclick="gerarNovoLoteAdmin()">
-            🎱 Gerar Novo Lote
+          <div class="grid-2">
+            <button id="btnGerarLote" class="btn-primary" onclick="gerarNovoLoteAdmin()">
+              🎱 Apenas Gerar
+            </button>
+            <button id="btnGerarLotePdf" class="btn-primary" style="background: var(--accent);" onclick="gerarNovoLoteComPdfAdmin()">
+              📄 Gerar + PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- BAIXAR PDF DE CARTELAS JÁ SALVAS -->
+        <div class="card">
+          <h2 style="margin: 0 0 10px 0; font-size: 16px;">Baixar PDF de Cartelas Já Geradas</h2>
+          <div class="grid-2">
+            <div>
+              <label for="pdfInicial">Cartela Inicial</label>
+              <input type="number" id="pdfInicial" placeholder="Ex: 1" min="1" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="pdfFinal">Cartela Final</label>
+              <input type="number" id="pdfFinal" placeholder="Ex: 50" min="1" inputmode="numeric" />
+            </div>
+          </div>
+          <button id="btnBaixarPdfIntervalo" class="btn-primary" onclick="baixarPdfIntervaloAdmin()">
+            📥 Baixar PDF do Intervalo
           </button>
         </div>
 
@@ -797,7 +820,7 @@
   </div>
 
   <script>
-    // Cole aqui a URL /exec do seu Web App do Google Apps Script:
+    // URL /exec do Web App do Google Apps Script:
     const URL_PADRAO_API = "https://script.google.com/macros/s/AKfycbx9YnyX4UWJWCwlUeB_ECaAw-6NfpAbGLXTwWvDYjp2ItTCHezSEhErHVo73Ot5Nbucew/exec";
     const STORAGE_USER_KEY = "bingo_pwa_usuario_v2";
 
@@ -1302,7 +1325,26 @@
       }
     }
 
-    // --- ADMIN: LOTE INCREMENTAL, ATRIBUIÇÃO E EQUIPE ---
+    // --- ADMIN: LOTE INCREMENTAL, PDF, ATRIBUIÇÃO E EQUIPE ---
+    function baixarPdfBase64(base64Data, nomeArquivo) {
+      const byteChars = atob(base64Data);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) {
+        byteNumbers[i] = byteChars.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = nomeArquivo || "Bingo_Cartelas.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    }
+
     async function carregarResumoBaseAdmin() {
       try {
         const res = await chamarApi({ acao: "resumoBase" });
@@ -1327,7 +1369,7 @@
 
       const btn = document.getElementById("btnGerarLote");
       btn.disabled = true;
-      btn.textContent = "Gerando cartelas...";
+      btn.textContent = "Gerando...";
 
       try {
         const res = await chamarApi({
@@ -1348,7 +1390,85 @@
         setMsg("msgApp", "Erro de conexão ao gerar cartelas.", "err");
       } finally {
         btn.disabled = false;
-        btn.textContent = "🎱 Gerar Novo Lote";
+        btn.textContent = "🎱 Apenas Gerar";
+      }
+    }
+
+    async function gerarNovoLoteComPdfAdmin() {
+      limparMsg("msgApp");
+      const qtd = Number(document.getElementById("qtdGerarLote").value.trim());
+      if (!qtd || qtd < 1 || qtd > 200) {
+        setMsg("msgApp", "Informe uma quantidade entre 1 e 200 cartelas para gerar o PDF.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnGerarLotePdf");
+      btn.disabled = true;
+      btn.textContent = "Gerando PDF...";
+
+      try {
+        const res = await chamarApi({
+          acao: "gerarLoteComPdf",
+          quantidade: qtd,
+          auth_login: usuarioLogado.login
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao gerar lote e PDF.", "err");
+          return;
+        }
+
+        if (res.pdf_base64) {
+          baixarPdfBase64(res.pdf_base64, res.pdf_nome);
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        document.getElementById("qtdGerarLote").value = "";
+        await carregarResumoBaseAdmin();
+      } catch (err) {
+        setMsg("msgApp", "Erro de conexão ao gerar PDF.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "📄 Gerar + PDF";
+      }
+    }
+
+    async function baixarPdfIntervaloAdmin() {
+      limparMsg("msgApp");
+      const ini = Number(document.getElementById("pdfInicial").value.trim());
+      const fim = Number(document.getElementById("pdfFinal").value.trim());
+
+      if (!ini || !fim || ini < 1 || fim < ini) {
+        setMsg("msgApp", "Informe um intervalo válido (inicial <= final).", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnBaixarPdfIntervalo");
+      btn.disabled = true;
+      btn.textContent = "Montando PDF...";
+
+      try {
+        const res = await chamarApi({
+          acao: "exportarPdfIntervalo",
+          cartela_inicial: ini,
+          cartela_final: fim,
+          auth_login: usuarioLogado.login
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao gerar PDF do intervalo.", "err");
+          return;
+        }
+
+        if (res.pdf_base64) {
+          baixarPdfBase64(res.pdf_base64, res.pdf_nome);
+        }
+        setMsg("msgApp", res.mensagem, "ok");
+      } catch (err) {
+        setMsg("msgApp", "Erro de conexão ao baixar PDF.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "📥 Baixar PDF do Intervalo";
       }
     }
 
