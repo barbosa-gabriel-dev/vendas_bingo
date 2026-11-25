@@ -722,6 +722,7 @@
   </div>
 
   <!-- MODAL DE CADASTRO / EDIÇÃO DE VENDEDOR -->
+  <!-- MODAL DE CADASTRO / EDIÇÃO DE VENDEDOR (SEM EDIÇÃO DE HIERARQUIA) -->
   <div id="modalVendedor" class="modal-backdrop">
     <div class="modal-box">
       <h3 id="tituloModalVendedor" style="margin:0 0 12px 0; font-size:17px;">Novo Vendedor</h3>
@@ -732,20 +733,23 @@
       <label for="vendNomeInput">Nome Completo</label>
       <input type="text" id="vendNomeInput" placeholder="Ex: Maria Souza" />
 
-      <div class="grid-2">
-        <div>
-          <label for="vendPinInput">PIN / Senha</label>
-          <input type="text" id="vendPinInput" placeholder="Ex: 1234" inputmode="numeric" />
-        </div>
-        <div>
-          <label for="vendPerfilInput">Perfil</label>
-          <select id="vendPerfilInput">
-            <option value="Vendedor">Vendedor</option>
-            <option value="Admin">Admin</option>
-          </select>
-        </div>
-      </div>
+      <label for="vendPinInput">PIN / Senha</label>
+      <input type="text" id="vendPinInput" placeholder="Ex: 1234" inputmode="numeric" />
 
+      <label for="vendAtivoInput">Status no Sistema</label>
+      <select id="vendAtivoInput">
+        <option value="SIM">Ativo (SIM)</option>
+        <option value="NAO">Inativo (NAO)</option>
+      </select>
+
+      <div class="modal-acoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalVendedor()">Cancelar</button>
+        <button type="button" id="btnSalvarVendedor" class="btn-confirmar" onclick="salvarVendedorModal()">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
       <label for="vendAtivoInput">Status no Sistema</label>
       <select id="vendAtivoInput">
         <option value="SIM">Ativo (SIM)</option>
@@ -828,8 +832,12 @@
         document.getElementById("filtroTodos").classList.add("ativo");
         document.getElementById("filtroVendedor").classList.remove("ativo");
         carregarVendedoresEAtribuicoes();
+      } else {
+        document.getElementById("abaAdminCartelas").classList.add("hidden");
+        document.getElementById("navAdmin").classList.remove("ativo");
       }
 
+      trocarAba("venda");
       carregarVendas();
     }
 
@@ -1335,7 +1343,7 @@
       }).join("");
     }
 
-    function abrirModalVendedor(login = "", nome = "", pin = "", perfil = "Vendedor", ativo = "SIM") {
+    function abrirModalVendedor(login = "", nome = "", pin = "", ativo = "SIM") {
       const editando = Boolean(login);
       modoModalVendedor = editando ? "editar" : "criar";
 
@@ -1349,7 +1357,6 @@
 
       document.getElementById("vendNomeInput").value = nome;
       document.getElementById("vendPinInput").value = pin;
-      document.getElementById("vendPerfilInput").value = perfil;
       document.getElementById("vendAtivoInput").value = ativo === "NAO" ? "NAO" : "SIM";
 
       document.getElementById("modalVendedor").classList.add("aberto");
@@ -1364,7 +1371,6 @@
       const login = document.getElementById("vendLoginInput").value.trim().toLowerCase();
       const nome = document.getElementById("vendNomeInput").value.trim();
       const pin = document.getElementById("vendPinInput").value.trim();
-      const perfil = document.getElementById("vendPerfilInput").value;
       const ativo = document.getElementById("vendAtivoInput").value;
 
       if (!login || !nome || !pin) {
@@ -1383,8 +1389,8 @@
           login,
           nome,
           pin,
-          perfil,
-          ativo
+          ativo,
+          auth_login: usuarioLogado.login
         });
 
         fecharModalVendedor();
