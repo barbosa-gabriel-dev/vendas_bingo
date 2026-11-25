@@ -68,7 +68,7 @@
     }
 
     .container {
-      max-width: 540px;
+      max-width: 560px;
       margin: 0 auto;
       padding: 14px;
     }
@@ -92,7 +92,7 @@
 
     input, select {
       width: 100%;
-      padding: 12px;
+      padding: 11px 12px;
       font-size: 15px;
       border: 1px solid #cbd5e1;
       border-radius: 8px;
@@ -101,9 +101,15 @@
       color: var(--text);
     }
 
-    input:focus {
+    input:focus, select:focus {
       outline: 2px solid var(--primary);
       border-color: var(--primary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
     .status-toggle {
@@ -114,7 +120,7 @@
     }
 
     .toggle-btn {
-      padding: 12px;
+      padding: 11px;
       border-radius: 8px;
       border: 1.5px solid #cbd5e1;
       background: #f8fafc;
@@ -138,7 +144,7 @@
 
     .btn-primary {
       width: 100%;
-      padding: 13px;
+      padding: 12px;
       background: var(--primary);
       color: #fff;
       border: none;
@@ -158,6 +164,7 @@
       gap: 8px;
       margin-bottom: 10px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .chip {
@@ -183,10 +190,13 @@
       padding: 12px;
       margin-bottom: 10px;
       background: #fff;
+    }
+
+    .venda-topo {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-start;
+      gap: 8px;
     }
 
     .venda-num {
@@ -203,6 +213,13 @@
     .venda-meta {
       font-size: 12px;
       color: var(--muted);
+    }
+
+    .venda-acoes {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      flex-wrap: wrap;
     }
 
     .badge {
@@ -224,16 +241,43 @@
       color: #92400e;
     }
 
-    .btn-baixa {
-      background: var(--accent);
-      color: #fff;
+    .badge-ativa {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-retirada {
+      background: #e2e8f0;
+      color: #475569;
+    }
+
+    .btn-sm {
       border: none;
-      border-radius: 8px;
-      padding: 9px 12px;
+      border-radius: 7px;
+      padding: 7px 10px;
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      white-space: nowrap;
+    }
+
+    .btn-baixa {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-editar {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-excluir {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .btn-retirar {
+      background: #fef3c7;
+      color: #92400e;
     }
 
     .bottom-nav {
@@ -244,15 +288,19 @@
       background: #fff;
       border-top: 1px solid var(--border);
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       z-index: 20;
     }
 
+    .bottom-nav.admin-nav {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
     .nav-btn {
-      padding: 12px;
+      padding: 11px 4px;
       border: none;
       background: transparent;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--muted);
       cursor: pointer;
@@ -331,7 +379,7 @@
       font-size: 10px;
     }
 
-    /* Modal de Confirmação */
+    /* Modais */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -352,7 +400,7 @@
       border-radius: 14px;
       padding: 20px;
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
     }
 
@@ -390,6 +438,11 @@
       cursor: pointer;
     }
 
+    .btn-perigo {
+      background: var(--danger);
+      color: #fff;
+    }
+
     .hidden {
       display: none !important;
     }
@@ -397,7 +450,7 @@
 </head>
 <body>
 
-  <!-- TELA DE LOGIN (URL OCULTA — APENAS USUÁRIO E PIN) -->
+  <!-- TELA DE LOGIN -->
   <div id="telaLogin" class="container">
     <div class="card" style="margin-top: 24px;">
       <h2 style="margin: 0 0 6px 0; font-size: 19px;">🎱 Bingo Vendas</h2>
@@ -407,7 +460,7 @@
       <div id="msgLogin" class="msg"></div>
 
       <label for="loginInput">Usuário / Login</label>
-      <input type="text" id="loginInput" placeholder="Ex: vendedor1" autocomplete="username" />
+      <input type="text" id="loginInput" placeholder="Ex: joao ou admin" autocomplete="username" />
 
       <label for="pinInput">PIN / Senha</label>
       <input type="password" id="pinInput" placeholder="Ex: 1111" inputmode="numeric" autocomplete="current-password" />
@@ -457,13 +510,23 @@
       <!-- ABA 2: LISTA DE VENDIDOS -->
       <section id="abaLista" class="hidden">
         <div class="card" style="padding: 12px;">
-          <div class="filtros-row">
-            <button id="filtroVendedor" class="chip ativo" onclick="mudarEscopoVendedor('meu')">
-              Minhas Vendas
-            </button>
-            <button id="filtroTodos" class="chip" onclick="mudarEscopoVendedor('todos')">
+          <div id="barraEscopoAdmin" class="filtros-row hidden">
+            <button id="filtroTodos" class="chip ativo" onclick="mudarEscopoVendedor('todos')">
               Todos os Vendedores
             </button>
+            <button id="filtroVendedor" class="chip" onclick="mudarEscopoVendedor('meu')">
+              Minhas Vendas
+            </button>
+            <select id="selectFiltroVendedor" style="margin-bottom:0; width:auto; padding:6px 10px; font-size:12px;" onchange="renderizarVendas()">
+              <option value="">Filtrar vendedor...</option>
+            </select>
+            <button class="chip" style="margin-left: auto;" onclick="carregarVendas()">
+              🔄 Atualizar
+            </button>
+          </div>
+
+          <div id="barraEscopoVendedor" class="filtros-row">
+            <span style="font-size:12px; font-weight:700; color:var(--muted);">Minhas Cartelas Vendidas</span>
             <button class="chip" style="margin-left: auto;" onclick="carregarVendas()">
               🔄 Atualizar
             </button>
@@ -514,12 +577,107 @@
 
         <div id="resultadoConferencia"></div>
       </section>
+
+      <!-- ABA 4 (ADMIN): ATRIBUIR E RETIRAR CARTELAS -->
+      <section id="abaAdminCartelas" class="hidden">
+        <div class="card">
+          <h2 style="margin: 0 0 12px 0; font-size: 17px;">Atribuir Faixa de Cartelas a Vendedor</h2>
+
+          <label for="atrVendedor">Vendedor</label>
+          <select id="atrVendedor"></select>
+
+          <div class="grid-2">
+            <div>
+              <label for="atrInicial">Cartela Inicial</label>
+              <input type="number" id="atrInicial" placeholder="Ex: 1" min="1" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="atrFinal">Cartela Final</label>
+              <input type="number" id="atrFinal" placeholder="Ex: 50" min="1" inputmode="numeric" />
+            </div>
+          </div>
+
+          <button id="btnAtribuir" class="btn-primary" onclick="atribuirFaixaCartelas()">
+            Atribuir Cartelas
+          </button>
+        </div>
+
+        <div class="card">
+          <h2 style="margin: 0 0 10px 0; font-size: 16px;">Retirar Faixa de Cartelas</h2>
+          <div class="grid-2">
+            <div>
+              <label for="retInicial">Cartela Inicial</label>
+              <input type="number" id="retInicial" placeholder="Ex: 1" min="1" inputmode="numeric" />
+            </div>
+            <div>
+              <label for="retFinal">Cartela Final</label>
+              <input type="number" id="retFinal" placeholder="Ex: 50" min="1" inputmode="numeric" />
+            </div>
+          </div>
+          <button class="btn-sm btn-retirar" style="width:100%; padding:11px; font-size:14px;" onclick="retirarFaixaManual()">
+            Retirar Intervalo Informado
+          </button>
+        </div>
+        <div class="card">
+          <h3 style="margin: 0 0 10px 0; font-size: 15px;">Histórico de Atribuições</h3>
+          <div id="listaAtribuicoes"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+            <h3 style="margin:0; font-size:15px;">Equipe e Faixas Atribuídas</h3>
+            <button type="button" class="btn-sm btn-baixa" onclick="abrirModalVendedor()">
+              + Novo Vendedor
+            </button>
+          </div>
+          <div id="listaVendedoresAdmin"></div>
+        </div>
+        <!-- MODAL DE CADASTRO / EDIÇÃO DE VENDEDOR -->
+        <div id="modalVendedor" class="modal-backdrop">
+          <div class="modal-box">
+            <h3 id="tituloModalVendedor" style="margin:0 0 12px 0; font-size:17px;">Novo Vendedor</h3>
+      
+            <label for="vendLoginInput">Login (sem espaços)</label>
+            <input type="text" id="vendLoginInput" placeholder="Ex: maria" />
+      
+            <label for="vendNomeInput">Nome Completo</label>
+            <input type="text" id="vendNomeInput" placeholder="Ex: Maria Souza" />
+      
+            <div class="grid-2">
+              <div>
+                <label for="vendPinInput">PIN / Senha</label>
+                <input type="text" id="vendPinInput" placeholder="Ex: 1234" inputmode="numeric" />
+              </div>
+              <div>
+                <label for="vendPerfilInput">Perfil</label>
+                <select id="vendPerfilInput">
+                  <option value="Vendedor">Vendedor</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+            </div>
+      
+            <label for="vendAtivoInput">Status no Sistema</label>
+            <select id="vendAtivoInput">
+              <option value="SIM">Ativo (SIM)</option>
+              <option value="NAO">Inativo (NAO)</option>
+            </select>
+      
+            <div class="modal-acoes">
+              <button type="button" class="btn-cancelar" onclick="fecharModalVendedor()">Cancelar</button>
+              <button type="button" id="btnSalvarVendedor" class="btn-confirmar" onclick="salvarVendedorModal()">
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <nav class="bottom-nav">
+    <nav id="bottomNav" class="bottom-nav">
       <button id="navVenda" class="nav-btn ativo" onclick="trocarAba('venda')">➕ Vender</button>
       <button id="navLista" class="nav-btn" onclick="trocarAba('lista')">📋 Vendidos</button>
       <button id="navConferir" class="nav-btn" onclick="trocarAba('conferir')">🔎 Conferir</button>
+      <button id="navAdmin" class="nav-btn hidden" onclick="trocarAba('admin')">🎟️ Cartelas</button>
     </nav>
   </div>
 
@@ -536,18 +694,62 @@
     </div>
   </div>
 
-  <script>
-    // Cole aqui a URL /exec do seu Web App do Google Apps Script:
-    const URL_PADRAO_API = "https://script.google.com/macros/s/AKfycbx9YnyX4UWJWCwlUeB_ECaAw-6NfpAbGLXTwWvDYjp2ItTCHezSEhErHVo73Ot5Nbucew/exec";
+  <!-- MODAL DE EDITAR VENDA -->
+  <div id="modalEditar" class="modal-backdrop">
+    <div class="modal-box">
+      <h3 style="margin:0 0 12px 0; font-size:17px;">Editar Venda</h3>
+      <label for="editNumCartela">Número da Cartela</label>
+      <input type="number" id="editNumCartela" min="1" inputmode="numeric" />
 
-    const STORAGE_USER_KEY = "bingo_pwa_usuario_v1";
+      <label for="editComprador">Nome do Comprador</label>
+      <input type="text" id="editComprador" />
+
+      <label for="editStatus">Status do Pagamento</label>
+      <select id="editStatus">
+        <option value="Pago">Pago</option>
+        <option value="Pendente">Pendente</option>
+      </select>
+
+      <div class="modal-acoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalEditar()">Cancelar</button>
+        <button type="button" id="btnSalvarEdicao" class="btn-confirmar" onclick="salvarEdicaoVenda()">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMAR EXCLUSÃO DE VENDA -->
+  <div id="modalExcluir" class="modal-backdrop">
+    <div class="modal-box">
+      <p id="textoModalExcluir" class="modal-pergunta"></p>
+      <div class="modal-acoes">
+        <button type="button" class="btn-cancelar" onclick="fecharModalExcluir()">Cancelar</button>
+        <button type="button" id="btnConfirmarExcluir" class="btn-confirmar btn-perigo" onclick="confirmarExcluirVenda()">
+          Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const URL_PADRAO_API = "COLE_SUA_URL_DO_WEB_APP_AQUI";
+    const STORAGE_USER_KEY = "bingo_pwa_usuario_v2";
 
     let usuarioLogado = null;
     let statusSelecionado = "Pago";
     let escopoVendedor = "meu";
     let filtroStatus = "Todos";
     let todasAsVendas = [];
+    let listaVendedores = [];
     let vendaParaBaixa = null;
+    let vendaEditando = null;
+    let vendaExcluindo = null;
+    let modoModalVendedor = "criar";
+
+    function isAdmin() {
+      return usuarioLogado && String(usuarioLogado.perfil || "").toLowerCase() === "admin";
+    }
 
     function obterApiUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -581,8 +783,23 @@
     function abrirApp() {
       document.getElementById("telaLogin").classList.add("hidden");
       document.getElementById("telaApp").classList.remove("hidden");
+
+      const adminMode = isAdmin();
       document.getElementById("infoVendedor").textContent =
-        `${usuarioLogado.nome} (@${usuarioLogado.login})`;
+        `${usuarioLogado.nome} (${adminMode ? "Administrador" : "Vendedor"})`;
+
+      document.getElementById("bottomNav").classList.toggle("admin-nav", adminMode);
+      document.getElementById("navAdmin").classList.toggle("hidden", !adminMode);
+      document.getElementById("barraEscopoAdmin").classList.toggle("hidden", !adminMode);
+      document.getElementById("barraEscopoVendedor").classList.toggle("hidden", adminMode);
+
+      escopoVendedor = adminMode ? "todos" : "meu";
+      if (adminMode) {
+        document.getElementById("filtroTodos").classList.add("ativo");
+        document.getElementById("filtroVendedor").classList.remove("ativo");
+        carregarVendedoresEAtribuicoes();
+      }
+
       carregarVendas();
     }
 
@@ -676,7 +893,8 @@
           comprador,
           pago: statusSelecionado === "Pago",
           vendedor_login: usuarioLogado.login,
-          vendedor_nome: usuarioLogado.nome
+          vendedor_nome: usuarioLogado.nome,
+          perfil: usuarioLogado.perfil || "Vendedor"
         });
 
         if (!res.sucesso) {
@@ -702,24 +920,26 @@
       const isVenda = aba === "venda";
       const isLista = aba === "lista";
       const isConferir = aba === "conferir";
+      const isAdminTab = aba === "admin" && isAdmin();
 
       document.getElementById("abaVenda").classList.toggle("hidden", !isVenda);
       document.getElementById("abaLista").classList.toggle("hidden", !isLista);
       document.getElementById("abaConferir").classList.toggle("hidden", !isConferir);
+      document.getElementById("abaAdminCartelas").classList.toggle("hidden", !isAdminTab);
 
       document.getElementById("navVenda").classList.toggle("ativo", isVenda);
       document.getElementById("navLista").classList.toggle("ativo", isLista);
       document.getElementById("navConferir").classList.toggle("ativo", isConferir);
+      document.getElementById("navAdmin").classList.toggle("ativo", isAdminTab);
 
-      if (isLista) {
-        carregarVendas();
-      }
+      if (isLista) carregarVendas();
+      if (isAdminTab) carregarVendedoresEAtribuicoes();
     }
 
     function mudarEscopoVendedor(escopo) {
       escopoVendedor = escopo;
-      document.getElementById("filtroVendedor").classList.toggle("ativo", escopo === "meu");
       document.getElementById("filtroTodos").classList.toggle("ativo", escopo === "todos");
+      document.getElementById("filtroVendedor").classList.toggle("ativo", escopo === "meu");
       renderizarVendas();
     }
 
@@ -746,21 +966,27 @@
     function renderizarVendas() {
       const container = document.getElementById("listaVendasContainer");
       const termo = document.getElementById("buscaVenda").value.trim().toLowerCase();
+      const selectVend = document.getElementById("selectFiltroVendedor").value;
 
       const filtradas = todasAsVendas.filter((v) => {
-        if (escopoVendedor === "meu") {
+        if (!isAdmin() || escopoVendedor === "meu") {
           if (String(v.vendedor_login).toLowerCase() !== String(usuarioLogado.login).toLowerCase()) {
             return false;
           }
+        } else if (selectVend && String(v.vendedor_login).toLowerCase() !== selectVend.toLowerCase()) {
+          return false;
         }
+
         if (filtroStatus !== "Todos" && v.status_pagamento !== filtroStatus) {
           return false;
         }
+
         if (termo) {
           const matchNum = String(v.numero_cartela).toLowerCase().includes(termo);
           const matchComp = String(v.comprador).toLowerCase().includes(termo);
           const matchCod = String(v.codigo_unico).toLowerCase().includes(termo);
-          if (!matchNum && !matchComp && !matchCod) return false;
+          const matchVend = String(v.vendedor_nome).toLowerCase().includes(termo);
+          if (!matchNum && !matchComp && !matchCod && !matchVend) return false;
         }
         return true;
       });
@@ -773,28 +999,40 @@
       container.innerHTML = filtradas.map((v) => {
         const isPago = v.status_pagamento === "Pago";
         const badgeClass = isPago ? "badge-pago" : "badge-pendente";
-        const botaoBaixa = !isPago
-          ? `<button class="btn-baixa" onclick="abrirModalBaixa('${v.id_venda}', '${escaparAspas(v.comprador)}')">Dar Baixa</button>`
+        const numInt = String(Number(v.numero_cartela));
+
+        const btnBaixa = !isPago
+          ? `<button class="btn-sm btn-baixa" onclick="abrirModalBaixa('${v.id_venda}', '${escaparAspas(v.comprador)}')">Dar Baixa</button>`
           : "";
+
+        const btnEditar = `<button class="btn-sm btn-editar" onclick="abrirModalEditar('${v.id_venda}', '${numInt}', '${escaparAspas(v.comprador)}', '${v.status_pagamento}')">Editar</button>`;
+        const btnExcluir = `<button class="btn-sm btn-excluir" onclick="abrirModalExcluir('${v.id_venda}', '${v.numero_cartela}', '${escaparAspas(v.comprador)}')">Excluir</button>`;
 
         return `
           <div class="venda-item">
-            <div>
-              <div class="venda-num">
-                Cartela Nº ${v.numero_cartela}
-                <span class="badge ${badgeClass}">${v.status_pagamento}</span>
+            <div class="venda-topo">
+              <div>
+                <div class="venda-num">
+                  Cartela Nº ${v.numero_cartela}
+                  <span class="badge ${badgeClass}">${v.status_pagamento}</span>
+                </div>
+                <div class="venda-comp">${escaparHtml(v.comprador)}</div>
+                <div class="venda-meta">
+                  Cód: ${escaparHtml(v.codigo_unico)} • Vend: ${escaparHtml(v.vendedor_nome)}
+                </div>
               </div>
-              <div class="venda-comp">${escaparHtml(v.comprador)}</div>
-              <div class="venda-meta">
-                Cód: ${escaparHtml(v.codigo_unico)} • Vend: ${escaparHtml(v.vendedor_nome)}
-              </div>
+              ${btnBaixa}
             </div>
-            ${botaoBaixa}
+            <div class="venda-acoes">
+              ${btnEditar}
+              ${btnExcluir}
+            </div>
           </div>
         `;
       }).join("");
     }
 
+    // --- BAIXA DE PAGAMENTO ---
     function abrirModalBaixa(idVenda, nomeComprador) {
       vendaParaBaixa = { idVenda, nomeComprador };
       document.getElementById("textoModalConfirmacao").textContent =
@@ -810,24 +1048,17 @@
     async function confirmarBaixaPagamento() {
       if (!vendaParaBaixa) return;
       limparMsg("msgApp");
-
       const btn = document.getElementById("btnConfirmarBaixa");
       btn.disabled = true;
       btn.textContent = "Confirmando...";
 
       try {
-        const res = await chamarApi({
-          acao: "darBaixa",
-          id_venda: vendaParaBaixa.idVenda
-        });
-
+        const res = await chamarApi({ acao: "darBaixa", id_venda: vendaParaBaixa.idVenda });
         fecharModalBaixa();
-
         if (!res.sucesso) {
           setMsg("msgApp", res.mensagem || "Erro ao dar baixa.", "err");
           return;
         }
-
         setMsg("msgApp", res.mensagem, "ok");
         await carregarVendas();
       } catch (err) {
@@ -839,6 +1070,219 @@
       }
     }
 
+    // --- EDITAR VENDA ---
+    function abrirModalEditar(idVenda, numCartela, comprador, statusPag) {
+      vendaEditando = idVenda;
+      document.getElementById("editNumCartela").value = numCartela;
+      document.getElementById("editComprador").value = comprador;
+      document.getElementById("editStatus").value = statusPag;
+      document.getElementById("modalEditar").classList.add("aberto");
+    }
+
+    function fecharModalEditar() {
+      vendaEditando = null;
+      document.getElementById("modalEditar").classList.remove("aberto");
+    }
+
+    async function salvarEdicaoVenda() {
+      if (!vendaEditando) return;
+      limparMsg("msgApp");
+
+      const numCartela = document.getElementById("editNumCartela").value.trim();
+      const comprador = document.getElementById("editComprador").value.trim();
+      const statusPag = document.getElementById("editStatus").value;
+
+      if (!numCartela || !comprador) return;
+
+      const btn = document.getElementById("btnSalvarEdicao");
+      btn.disabled = true;
+      btn.textContent = "Salvando...";
+
+      try {
+        const res = await chamarApi({
+          acao: "editarVenda",
+          id_venda: vendaEditando,
+          numero_cartela: numCartela,
+          comprador,
+          status_pagamento: statusPag
+        });
+
+        fecharModalEditar();
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao editar venda.", "err");
+          return;
+        }
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendas();
+      } catch (err) {
+        fecharModalEditar();
+        setMsg("msgApp", "Erro de conexão ao editar venda.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Salvar";
+      }
+    }
+
+    // --- EXCLUIR VENDA ---
+    function abrirModalExcluir(idVenda, numCartela, comprador) {
+      vendaExcluindo = idVenda;
+      document.getElementById("textoModalExcluir").textContent =
+        `Deseja excluir a venda da cartela Nº ${numCartela} (${comprador})?`;
+      document.getElementById("modalExcluir").classList.add("aberto");
+    }
+
+    function fecharModalExcluir() {
+      vendaExcluindo = null;
+      document.getElementById("modalExcluir").classList.remove("aberto");
+    }
+
+    async function confirmarExcluirVenda() {
+      if (!vendaExcluindo) return;
+      limparMsg("msgApp");
+
+      const btn = document.getElementById("btnConfirmarExcluir");
+      btn.disabled = true;
+      btn.textContent = "Excluindo...";
+
+      try {
+        const res = await chamarApi({ acao: "excluirVenda", id_venda: vendaExcluindo });
+        fecharModalExcluir();
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao excluir venda.", "err");
+          return;
+        }
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendas();
+      } catch (err) {
+        fecharModalExcluir();
+        setMsg("msgApp", "Erro de conexão ao excluir venda.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    // --- ADMIN: ATRIBUIR E RETIRAR CARTELAS ---
+    async function carregarVendedoresEAtribuicoes() {
+      try {
+        const resVend = await chamarApi({ acao: "listarVendedores" });
+        if (resVend.sucesso && Array.isArray(resVend.vendedores)) {
+          listaVendedores = resVend.vendedores;
+          const selectAtr = document.getElementById("atrVendedor");
+          const selectFiltro = document.getElementById("selectFiltroVendedor");
+
+          selectAtr.innerHTML = listaVendedores.map(v =>
+            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</option>`
+          ).join("");
+
+          const valorAtualFiltro = selectFiltro.value;
+          selectFiltro.innerHTML = `<option value="">Todos vendedores</option>` + listaVendedores.map(v =>
+            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)}</option>`
+          ).join("");
+          selectFiltro.value = valorAtualFiltro;
+
+          renderizarFaixasPorVendedor(listaVendedores);
+        }
+      } catch (err) {}
+    }
+
+    function renderizarFaixasPorVendedor(vendedores) {
+      const cont = document.getElementById("listaAtribuicoes");
+      const comFaixas = vendedores.filter(v => v.faixas_atribuidas);
+
+      if (!comFaixas.length) {
+        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhuma cartela atribuída no momento.</div>`;
+        return;
+      }
+
+      cont.innerHTML = comFaixas.map(v => `
+        <div class="venda-item">
+          <div class="venda-topo">
+            <div>
+              <div class="venda-num">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</div>
+              <div class="venda-comp">Faixas: <strong>${escaparHtml(v.faixas_atribuidas)}</strong></div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+    
+    async function atribuirFaixaCartelas() {
+      limparMsg("msgApp");
+      const vendedorLogin = document.getElementById("atrVendedor").value;
+      const inicial = document.getElementById("atrInicial").value.trim();
+      const finalNum = document.getElementById("atrFinal").value.trim();
+
+      if (!vendedorLogin || !inicial || !finalNum) {
+        setMsg("msgApp", "Preencha vendedor, cartela inicial e cartela final.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnAtribuir");
+      btn.disabled = true;
+      btn.textContent = "Atribuindo...";
+
+      try {
+        const res = await chamarApi({
+          acao: "atribuirCartelas",
+          vendedor_login: vendedorLogin,
+          cartela_inicial: inicial,
+          cartela_final: finalNum
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Falha ao atribuir cartelas.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        document.getElementById("atrInicial").value = "";
+        document.getElementById("atrFinal").value = "";
+        await carregarVendedoresEAtribuicoes();
+      } catch (err) {
+        setMsg("msgApp", "Erro de conexão ao atribuir cartelas.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Atribuir Cartelas";
+      }
+    }
+
+    async function retirarFaixaManual() {
+      const inicial = document.getElementById("retInicial").value.trim();
+      const finalNum = document.getElementById("retFinal").value.trim();
+      if (!inicial || !finalNum) {
+        setMsg("msgApp", "Informe a cartela inicial e final para retirar.", "err");
+        return;
+      }
+      await retirarFaixa("", inicial, finalNum, "");
+      document.getElementById("retInicial").value = "";
+      document.getElementById("retFinal").value = "";
+    }
+
+    async function retirarFaixa(idAtribuicao, inicial, finalNum, vendedorLogin) {
+      limparMsg("msgApp");
+      try {
+        const res = await chamarApi({
+          acao: "retirarCartelas",
+          id_atribuicao: idAtribuicao,
+          cartela_inicial: inicial,
+          cartela_final: finalNum,
+          vendedor_login: vendedorLogin
+        });
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao retirar cartelas.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendedoresEAtribuicoes();
+      } catch (err) {
+        setMsg("msgApp", "Erro de conexão ao retirar cartelas.", "err");
+      }
+    }
+
+    // --- CONFERÊNCIA ---
     async function consultarCodigoCartela() {
       limparMsg("msgApp");
       const codigo = document.getElementById("codigoConferencia").value.trim().toUpperCase();
@@ -896,6 +1340,10 @@
         linhasTabela += `<tr>${tds}</tr>`;
       }
 
+      const atribHtml = cartela.vendedor_atribuido
+        ? `<div style="margin-top:4px; font-size:12px;"><strong>Atribuída a:</strong> ${escaparHtml(cartela.vendedor_atribuido)}</div>`
+        : "";
+
       const vendaHtml = venda
         ? `
           <div style="margin-top:8px; font-size:13px;">
@@ -914,6 +1362,7 @@
           <div style="font-size:12px; font-weight:700; margin-top:4px;">
             Código Único: ${escaparHtml(cartela.codigo_unico)} • Base: ${escaparHtml(cartela.status_base)}
           </div>
+          ${atribHtml}
           ${vendaHtml}
           <table class="mini-bingo">
             <thead>
@@ -935,6 +1384,161 @@
 
     function escaparAspas(str) {
       return String(str || "").replace(/'/g, "\\'");
+    }
+
+    async function carregarVendedoresEAtribuicoes() {
+      try {
+        const resVend = await chamarApi({ acao: "listarVendedores" });
+        if (resVend.sucesso && Array.isArray(resVend.vendedores)) {
+          listaVendedores = resVend.vendedores;
+          const ativos = listaVendedores.filter(v => v.ativo === "SIM");
+
+          const selectAtr = document.getElementById("atrVendedor");
+          const selectFiltro = document.getElementById("selectFiltroVendedor");
+
+          selectAtr.innerHTML = ativos.map(v =>
+            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</option>`
+          ).join("");
+
+          const valorAtualFiltro = selectFiltro.value;
+          selectFiltro.innerHTML = `<option value="">Todos vendedores</option>` + listaVendedores.map(v =>
+            `<option value="${escaparHtml(v.login)}">${escaparHtml(v.nome)}</option>`
+          ).join("");
+          selectFiltro.value = valorAtualFiltro;
+
+          renderizarFaixasPorVendedor(listaVendedores);
+          renderizarListaVendedoresAdmin(listaVendedores);
+        }
+      } catch (err) {}
+    }
+
+    function renderizarFaixasPorVendedor(vendedores) {
+      const cont = document.getElementById("listaAtribuicoes");
+      const comFaixas = vendedores.filter(v => v.faixas_atribuidas);
+
+      if (!comFaixas.length) {
+        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhuma cartela atribuída no momento.</div>`;
+        return;
+      }
+
+      cont.innerHTML = comFaixas.map(v => `
+        <div class="venda-item">
+          <div class="venda-topo">
+            <div>
+              <div class="venda-num">${escaparHtml(v.nome)} (@${escaparHtml(v.login)})</div>
+              <div class="venda-comp">Faixas: <strong>${escaparHtml(v.faixas_atribuidas)}</strong></div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderizarListaVendedoresAdmin(vendedores) {
+      const cont = document.getElementById("listaVendedoresAdmin");
+      if (!vendedores.length) {
+        cont.innerHTML = `<div style="font-size:13px; color:var(--muted);">Nenhum vendedor cadastrado.</div>`;
+        return;
+      }
+
+      cont.innerHTML = vendedores.map(v => {
+        const badgeStatus = v.ativo === "SIM"
+          ? `<span class="badge badge-pago">Ativo</span>`
+          : `<span class="badge badge-retirada">Inativo</span>`;
+
+        return `
+          <div class="venda-item">
+            <div class="venda-topo">
+              <div>
+                <div class="venda-num">
+                  ${escaparHtml(v.nome)}
+                  <span class="badge badge-ativa">${escaparHtml(v.perfil)}</span>
+                  ${badgeStatus}
+                </div>
+                <div class="venda-meta">
+                  Login: @${escaparHtml(v.login)} • PIN: ${escaparHtml(v.pin)}
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-sm btn-editar"
+                onclick="abrirModalVendedor('${escaparAspas(v.login)}', '${escaparAspas(v.nome)}', '${escaparAspas(v.pin)}', '${escaparAspas(v.perfil)}', '${escaparAspas(v.ativo)}')"
+              >
+                Editar
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function abrirModalVendedor(login = "", nome = "", pin = "", perfil = "Vendedor", ativo = "SIM") {
+      const editando = Boolean(login);
+      modoModalVendedor = editando ? "editar" : "criar";
+
+      document.getElementById("tituloModalVendedor").textContent = editando
+        ? `Editar Vendedor (@${login})`
+        : "Novo Vendedor";
+
+      const inpLogin = document.getElementById("vendLoginInput");
+      inpLogin.value = login;
+      inpLogin.disabled = editando;
+
+      document.getElementById("vendNomeInput").value = nome;
+      document.getElementById("vendPinInput").value = pin;
+      document.getElementById("vendPerfilInput").value = perfil;
+      document.getElementById("vendAtivoInput").value = ativo;
+
+      document.getElementById("modalVendedor").classList.add("aberto");
+    }
+
+    function fecharModalVendedor() {
+      document.getElementById("modalVendedor").classList.remove("aberto");
+    }
+
+    async function salvarVendedorModal() {
+      limparMsg("msgApp");
+      const login = document.getElementById("vendLoginInput").value.trim().toLowerCase();
+      const nome = document.getElementById("vendNomeInput").value.trim();
+      const pin = document.getElementById("vendPinInput").value.trim();
+      const perfil = document.getElementById("vendPerfilInput").value;
+      const ativo = document.getElementById("vendAtivoInput").value;
+
+      if (!login || !nome || !pin) {
+        setMsg("msgApp", "Preencha Login, Nome Completo e PIN.", "err");
+        return;
+      }
+
+      const btn = document.getElementById("btnSalvarVendedor");
+      btn.disabled = true;
+      btn.textContent = "Salvando...";
+
+      try {
+        const res = await chamarApi({
+          acao: "salvarVendedor",
+          modo: modoModalVendedor,
+          login,
+          nome,
+          pin,
+          perfil,
+          ativo
+        });
+
+        fecharModalVendedor();
+
+        if (!res.sucesso) {
+          setMsg("msgApp", res.mensagem || "Erro ao salvar vendedor.", "err");
+          return;
+        }
+
+        setMsg("msgApp", res.mensagem, "ok");
+        await carregarVendedoresEAtribuicoes();
+      } catch (err) {
+        fecharModalVendedor();
+        setMsg("msgApp", "Erro de conexão ao salvar vendedor.", "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Salvar";
+      }
     }
   </script>
 </body>
